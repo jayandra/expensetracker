@@ -7,3 +7,18 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
+grocery = Category.create(name: "Grocery")
+Category.create(name: "Walmart", parent_id: grocery.id)
+Category.create(name: "Aldi", parent_id: grocery.id)
+Category.create(name: "Costco", parent_id: grocery.id)
+Category.create(name: "Target", parent_id: grocery.id)
+
+utility = Category.create(name: "Utilities")
+water = Category.create(name: "Water", parent_id: utility.id)
+Category.create(name: "Electricity", parent_id: utility.id)
+Category.create(name: "Internet", parent_id: utility.id)
+Category.create(name: "Phone", parent_id: utility.id)
+
+Category.create(name: "Tap", parent_id: water.id)
+Category.create(name: "Bottled", parent_id: water.id)
+Category.create(name: "Jar", parent_id: water.id)

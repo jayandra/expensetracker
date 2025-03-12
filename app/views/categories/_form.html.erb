@@ -18,7 +18,7 @@
 
   <div>
     <%= form.label :parent_id, style: "display: block" %>
-    <%= form.text_field :parent_id %>
+    <%= form.select :parent_id, parent_selector(Category.all), include_blank: true %>
   </div>
 
   <div>
