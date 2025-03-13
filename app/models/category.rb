@@ -5,6 +5,8 @@ class Category < ApplicationRecord
   validates :name, presence: true, uniqueness: { scope: :parent_id }
   validate :no_circular_dependency
 
+  scope :roots, -> { where(parent_id: nil) }
+
   def ancestors
     result = []
     current = self.parent

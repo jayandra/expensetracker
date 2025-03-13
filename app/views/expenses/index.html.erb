@@ -3,14 +3,24 @@
 <% content_for :title, "Expenses" %>
 
 <h1>Expenses</h1>
+<%= button_to "New expense", new_expense_path, method: :get %>
 
 <div id="expenses">
-  <% @expenses.each do |expense| %>
-    <%= render expense %>
-    <p>
-      <%= link_to "Show this expense", expense %>
-    </p>
-  <% end %>
+  <table>
+    <tr>
+      <th>Amount</th>
+      <th>Description</th>
+      <th>Category</th>
+    </tr>
+
+    <% @expenses.each do |expense| %>
+      <tr>
+        <td><%= link_to expense.amount, edit_expense_path(expense) %></td>
+        <td><%= expense.description %></td>
+        <td><%= expense.category.name  %></td>
+      </tr>
+    <% end %>
+  </table>
+
 </div>
 
-<%= link_to "New expense", new_expense_path %>

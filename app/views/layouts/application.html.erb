@@ -19,10 +19,15 @@
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "https://cdn.simplecss.org/simple.min.css" %>
     <%= javascript_importmap_tags %>
   </head>
 
   <body>
+    <div>
+      <div><%= link_to "Expenses", expenses_path %></div>
+      <div><%= link_to "Categories", categories_path %></div>
+    </div>
     <%= yield %>
   </body>
 </html>

@@ -1,0 +1,10 @@
+<ul class="category-tree">
+  <% categories.each do |category| %>
+    <li>
+      <%= link_to category.name, edit_category_path(category) %>
+      <% if category.children.any? %>
+        <%= render partial: 'category_tree', locals: { categories: category.children } %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>
