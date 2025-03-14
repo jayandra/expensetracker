@@ -49,3 +49,10 @@
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+
+# Custom ignores
+/docs
+/config/deploy/*
+/*.md
+/.aider*
