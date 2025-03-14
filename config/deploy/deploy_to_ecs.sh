@@ -23,6 +23,12 @@ IAM_ROLE_NAME="ecsTaskExecutionRole"
 SECURITY_GROUP_NAME="expensetracker-sg"
 LOG_GROUP_NAME="/ecs/expensetracker"
 
+ALB_NAME="expensetracker-alb"
+TARGET_GROUP_NAME="expensetracker-tg"
+ALB_LISTENER_PORT=80
+CONTAINER_PORT=3000
+HEALTH_CHECK_PATH="/up"
+
 AWS_REGION="${AWS_REGION:-us-east-1}"
 ECR_REGISTRY="${ECR_REGISTRY}"
 VPC_ID="${VPC_ID}"
@@ -122,16 +128,146 @@ if [ -z "${SECURITY_GROUP_ID}" ]; then
      echo "Security group created with ID: ${SECURITY_GROUP_ID}"
 
      # Add inbound rules
-     echo "Adding inbound rules to security group..."
-     aws ec2 authorize-security-group-ingress \
-         --group-id ${SECURITY_GROUP_ID} \
-         --protocol tcp \
-         --port 3000 \
-         --cidr 0.0.0.0/0 > /dev/null
+      echo "Adding inbound rules to security group..."
+      # Allow HTTP traffic to ALB
+      aws ec2 authorize-security-group-ingress \
+          --group-id ${SECURITY_GROUP_ID} \
+          --protocol tcp \
+          --port ${ALB_LISTENER_PORT} \
+          --cidr 0.0.0.0/0 > /dev/null
 
+      # Allow traffic from ALB to container
+      aws ec2 authorize-security-group-ingress \
+          --group-id ${SECURITY_GROUP_ID} \
+          --protocol tcp \
+          --port ${CONTAINER_PORT} \
+          --cidr 0.0.0.0/0 > /dev/null
      echo "Security group setup complete."
  fi
 fi
+
+# Step 3.5: Set up Application Load Balancer
+ # Get available AZs
+ AZS=$(aws ec2 describe-availability-zones --query "AvailabilityZones[?State=='available'].ZoneName" --output text)
+ AZ1=$(echo $AZS | cut -d' ' -f1)
+ AZ2=$(echo $AZS | cut -d' ' -f2)
+
+ # Create subnet in first AZ if it doesn't exist
+ SUBNET1_ID=$(aws ec2 describe-subnets \
+     --filters "Name=vpc-id,Values=${VPC_ID}" "Name=availability-zone,Values=${AZ1}" \
+     --query "Subnets[0].SubnetId" --output text)
+
+ if [ "${SUBNET1_ID}" = "None" ] || [ -z "${SUBNET1_ID}" ]; then
+     echo "Creating subnet in ${AZ1}..."
+     SUBNET1_ID=$(aws ec2 create-subnet \
+         --vpc-id ${VPC_ID} \
+         --availability-zone ${AZ1} \
+         --cidr-block 10.0.1.0/24 \
+         --query "Subnet.SubnetId" --output text)
+
+     # Make it public
+     aws ec2 modify-subnet-attribute \
+         --subnet-id ${SUBNET1_ID} \
+         --map-public-ip-on-launch
+ fi
+
+ # Create subnet in second AZ if it doesn't exist
+ SUBNET2_ID=$(aws ec2 describe-subnets \
+     --filters "Name=vpc-id,Values=${VPC_ID}" "Name=availability-zone,Values=${AZ2}" \
+     --query "Subnets[0].SubnetId" --output text)
+
+ if [ "${SUBNET2_ID}" = "None" ] || [ -z "${SUBNET2_ID}" ]; then
+     echo "Creating subnet in ${AZ2}..."
+     SUBNET2_ID=$(aws ec2 create-subnet \
+         --vpc-id ${VPC_ID} \
+         --availability-zone ${AZ2} \
+         --cidr-block 10.0.2.0/24 \
+         --query "Subnet.SubnetId" --output text)
+
+     # Make it public
+     aws ec2 modify-subnet-attribute \
+         --subnet-id ${SUBNET2_ID} \
+         --map-public-ip-on-launch
+ fi
+
+ # Set the subnet IDs for use in the script
+ SUBNET_IDS="${SUBNET1_ID} ${SUBNET2_ID}"
+
+ echo "Step 3.5: Setting up Application Load Balancer..."
+
+ # Check if ALB exists
+ ALB_ARN=$(aws elbv2 describe-load-balancers --names ${ALB_NAME} --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || echo "")
+
+ if [ "${ALB_ARN}" = "None" ] || [ -z "${ALB_ARN}" ]; then
+     echo "Creating Application Load Balancer ${ALB_NAME}..."
+
+     # Create ALB
+     ALB_ARN=$(aws elbv2 create-load-balancer \
+         --name ${ALB_NAME} \
+         --subnets ${SUBNET_IDS} \
+         --security-groups ${SECURITY_GROUP_ID} \
+         --type application \
+         --query 'LoadBalancers[0].LoadBalancerArn' \
+         --output text)
+
+     echo "ALB created with ARN: ${ALB_ARN}"
+
+     # Wait for ALB to be active
+     echo "Waiting for ALB to become active..."
+     aws elbv2 wait load-balancer-available --load-balancer-arns ${ALB_ARN}
+ else
+     echo "ALB ${ALB_NAME} already exists with ARN: ${ALB_ARN}"
+ fi
+
+ # Check if target group exists
+ TG_ARN=$(aws elbv2 describe-target-groups --names ${TARGET_GROUP_NAME} --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+
+ if [ "${TG_ARN}" = "None" ] || [ -z "${TG_ARN}" ]; then
+     echo "Creating Target Group ${TARGET_GROUP_NAME}..."
+
+     # Create target group
+     TG_ARN=$(aws elbv2 create-target-group \
+         --name ${TARGET_GROUP_NAME} \
+         --protocol HTTP \
+         --port ${CONTAINER_PORT} \
+         --vpc-id ${VPC_ID} \
+         --target-type ip \
+         --health-check-path ${HEALTH_CHECK_PATH} \
+         --health-check-interval-seconds 30 \
+         --health-check-timeout-seconds 5 \
+         --healthy-threshold-count 2 \
+         --unhealthy-threshold-count 2 \
+         --query 'TargetGroups[0].TargetGroupArn' \
+         --output text)
+
+     echo "Target Group created with ARN: ${TG_ARN}"
+ else
+     echo "Target Group ${TARGET_GROUP_NAME} already exists with ARN: ${TG_ARN}"
+ fi
+
+ # Check if listener exists
+ LISTENER_ARN=$(aws elbv2 describe-listeners --load-balancer-arn ${ALB_ARN} --query 'Listeners[?Port==`'${ALB_LISTENER_PORT}'`].ListenerArn' --output text 2>/dev/null || echo "")
+
+ if [ "${LISTENER_ARN}" = "None" ] || [ -z "${LISTENER_ARN}" ]; then
+     echo "Creating Listener on port ${ALB_LISTENER_PORT}..."
+
+     # Create listener
+     LISTENER_ARN=$(aws elbv2 create-listener \
+         --load-balancer-arn ${ALB_ARN} \
+         --protocol HTTP \
+         --port ${ALB_LISTENER_PORT} \
+         --default-actions Type=forward,TargetGroupArn=${TG_ARN} \
+         --query 'Listeners[0].ListenerArn' \
+         --output text)
+
+     echo "Listener created with ARN: ${LISTENER_ARN}"
+ else
+     echo "Listener already exists with ARN: ${LISTENER_ARN}"
+ fi
+
+ # Get the ALB DNS name for later use
+ ALB_DNS_NAME=$(aws elbv2 describe-load-balancers --load-balancer-arns ${ALB_ARN} --query 'LoadBalancers[0].DNSName' --output text)
+ echo "ALB DNS Name: ${ALB_DNS_NAME}"
 
 # Step 4: Create CloudWatch Log Group
 echo "Step 4: Setting up CloudWatch Log Group..."
@@ -262,22 +398,28 @@ aws ecs update-service \
    --task-definition ${TASK_DEFINITION_NAME} \
    --force-new-deployment > /dev/null
 else
-echo "Creating new ECS Service ${ECS_SERVICE}..."
-# Create a temporary service definition with updated values
-TMP_SERVICE_DEF=$(mktemp)
-cat config/deploy/service.json | \
-   jq --arg cluster "${ECS_CLUSTER}" \
-      --arg service "${ECS_SERVICE}" \
-      --arg task "${TASK_DEFINITION_NAME}" \
-      --arg subnet "${SUBNET_IDS}" \
-      --arg sg "${SECURITY_GROUP_ID}" \
-   '.cluster = $cluster |
-    .serviceName = $service |
-    .taskDefinition = $task |
-    .networkConfiguration.awsvpcConfiguration.subnets = [$subnet] |
-    .networkConfiguration.awsvpcConfiguration.securityGroups = [$sg]' > ${TMP_SERVICE_DEF}
+   echo "Creating new ECS Service ${ECS_SERVICE}..."
+   # Create a temporary service definition with updated values
+   SUBNET_ARRAY=($SUBNET_IDS)
+   TMP_SERVICE_DEF=$(mktemp)
+   cat config/deploy/service.json | \
+       jq --arg cluster "${ECS_CLUSTER}" \
+          --arg service "${ECS_SERVICE}" \
+          --arg task "${TASK_DEFINITION_NAME}" \
+          --arg subnet1 "${SUBNET_ARRAY[0]}" \
+          --arg subnet2 "${SUBNET_ARRAY[1]}" \
+          --arg sg "${SECURITY_GROUP_ID}" \
+          --arg tg_arn "${TG_ARN}" \
+          --arg container_name "${IMAGE_NAME}" \
+          --arg container_port "${CONTAINER_PORT}" \
+       '.cluster = $cluster |
+        .serviceName = $service |
+        .taskDefinition = $task |
+        .networkConfiguration.awsvpcConfiguration.subnets = [$subnet1, $subnet2] |
+        .networkConfiguration.awsvpcConfiguration.securityGroups = [$sg] |
+        .loadBalancers = [{"targetGroupArn": $tg_arn, "containerName": $container_name, "containerPort": ($container_port | tonumber)}]' > ${TMP_SERVICE_DEF}
 
-aws ecs create-service --cli-input-json file://${TMP_SERVICE_DEF} > /dev/null
+   aws ecs create-service --cli-input-json file://${TMP_SERVICE_DEF} > /dev/null
 fi
 
 # Step 9: Monitor Deployment
@@ -303,8 +445,8 @@ if [ "${TASK_ARN}" != "None" ]; then
      PUBLIC_IP=$(aws ec2 describe-network-interfaces --network-interface-ids ${ENI_ID} \
          --query "NetworkInterfaces[0].Association.PublicIp" --output text)
 
-     echo "Application deployed successfully!"
-     echo "You can access your application at: http://${PUBLIC_IP}:3000"
+   echo "Application deployed successfully!"
+   echo "You can access your application at: http://${ALB_DNS_NAME}"
  else
      echo "Could not retrieve network interface details."
  fi

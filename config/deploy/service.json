@@ -10,5 +10,6 @@
       "securityGroups": ["<placeholder>"],
       "assignPublicIp": "ENABLED"
     }
-  }
+  },
+  "loadBalancers": []
 }
