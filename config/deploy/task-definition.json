@@ -32,6 +32,22 @@
         {
           "name": "SECRET_KEY_BASE",
           "valueFrom": "<placeholder>"
+        },
+        {
+          "name": "DB_NAME",
+          "valueFrom": "<placeholder>"
+        },
+        {
+          "name": "DB_HOSTNAME",
+          "valueFrom": "<placeholder>"
+        },
+        {
+          "name": "DB_USERNAME",
+          "valueFrom": "<placeholder>"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "<placeholder>"
         }
       ],
       "logConfiguration": {

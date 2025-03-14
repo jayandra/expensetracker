@@ -11,7 +11,12 @@ default: &default
 
 development:
   <<: *default
-  database: storage/development.sqlite3
+  adapter: postgresql
+  database: jayandra
+  host: localhost
+  username: postgres
+  password:
+  port: 5432
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -26,7 +31,12 @@ test:
 production:
   primary:
     <<: *default
-    database: storage/production.sqlite3
+    adapter: postgresql
+    database: <%= ENV['DB_NAME'] %>
+    host: <%= ENV['DB_HOSTNAME'] %>
+    username: <%= ENV['DB_USERNAME'] %>
+    password: <%= ENV['DB_PASSWORD'] %>
+    port: 5432
   cache:
     <<: *default
     database: storage/production_cache.sqlite3

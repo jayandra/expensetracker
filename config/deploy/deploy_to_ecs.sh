@@ -12,12 +12,24 @@
 
 set -e
 
+# Get the directory where the script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Look for .env.deploy in the same directory as the script
+if [ -f "${SCRIPT_DIR}/.env.deploy" ]; then
+  source "${SCRIPT_DIR}/.env.deploy"
+else
+  echo "Error: .env.deploy file not found in ${SCRIPT_DIR}"
+  exit 1
+fi
+
 # Configuration constants
 IMAGE_NAME="expensetracker"
 IMAGE_TAG="latest"
 ECS_CLUSTER="expensetracker-cluster"
 ECS_SERVICE="expensetracker-service"
 TASK_DEFINITION_PATH="config/deploy/task-definition.json"
+SECRETS_POLICY_DEFINITION_PATH="config/deploy/secretsmanager-policy.json"
 TASK_DEFINITION_NAME="expensetracker"
 IAM_ROLE_NAME="ecsTaskExecutionRole"
 SECURITY_GROUP_NAME="expensetracker-sg"
@@ -34,24 +46,19 @@ ECR_REGISTRY="${ECR_REGISTRY}"
 VPC_ID="${VPC_ID}"
 SUBNET_IDS="${SUBNET_IDS}"
 SECURITY_GROUP_ID="${SECURITY_GROUP_ID}"
-SECRET_NAME="${SECRET_NAME}"
 
-# Get the directory where the script is located
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SECRET_NAME="${SECRET_SECRET_NAME}"
+SECRET_RESOURCE="${SECRET_SECRET_RESOURCE}"
+SECRET_KEY_BASE="${SECRET_SECRET_KEY_BASE}"
+DB_NAME="${SECRET_DB_NAME}"
+DB_HOSTNAME="${SECRET_DB_HOSTNAME}"
+DB_USERNAME="${SECRET_DB_USERNAME}"
+DB_PASSWORD="${SECRET_DB_PASSWORD}"
 
-# Look for .env.deploy in the same directory as the script
-if [ -f "${SCRIPT_DIR}/.env.deploy" ]; then
-source "${SCRIPT_DIR}/.env.deploy"
-else
-echo "Error: .env.deploy file not found in ${SCRIPT_DIR}"
-exit 1
-fi
+
 
 # Full image reference
 FULL_IMAGE_NAME="${ECR_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-
-
 
 echo "Starting deployment process for ExpenseTracker to ECS Fargate..."
 
@@ -72,35 +79,40 @@ else
  aws iam attach-role-policy \
      --role-name ${IAM_ROLE_NAME} \
      --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy \
-     --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess > /dev/null
 
- # Attach Secrets Manager Policy
- echo "Attaching Secrets Manager Policy..."
- aws iam put-role-policy \
-     --role-name ${IAM_ROLE_NAME} \
-     --policy-name SecretsManagerAccess \
-     --policy-document file://config/deploy/secretsmanager-policy.json > /dev/null
+  aws iam attach-role-policy \
+      --role-name ${IAM_ROLE_NAME} \
+      --policy-arn arn:aws:iam::aws:policy/CloudWatchLogsFullAccess > /dev/null
 
- echo "IAM Role setup complete."
+  # Attach Secrets Manager Policy
+  echo "Attaching Secrets Manager Policy..."
+  # Create a temporary policy file with the updated resource
+  TMP_POLICY_FILE=$(mktemp)
+  cat ${SECRETS_POLICY_DEFINITION_PATH} | \
+    jq --arg resource "${SECRET_RESOURCE}" \
+    '.Statement[0].Resource = $resource' > ${TMP_POLICY_FILE}
+
+  # Apply the updated policy
+  aws iam put-role-policy \
+      --role-name ${IAM_ROLE_NAME} \
+      --policy-name SecretsManagerAccess \
+      --policy-document file://${TMP_POLICY_FILE}
+
+  # Clean up the temporary file
+  rm ${TMP_POLICY_FILE}
+
+  echo "IAM Role setup complete."
 fi
 
 # Step 2: Create Secret in Secrets Manager
-echo "Step 2: Setting up Secrets Manager..."
+echo "Step 2: Setting up Secrets Manager... ${SECRET_NAME}"
 
 # Check if secret exists
 if aws secretsmanager describe-secret --secret-id ${SECRET_NAME} > /dev/null 2>/dev/null; then
  echo "Secret ${SECRET_NAME} already exists."
 else
- echo "Creating Secret ${SECRET_NAME}..."
- # Generate a random secret key base
- SECRET_KEY_BASE=$(openssl rand -hex 64)
-
- aws secretsmanager create-secret \
-     --name ${SECRET_NAME} \
-     --description "Secret key base for ExpenseTracker Rails application" \
-     --secret-string ${SECRET_KEY_BASE} > /dev/null
-
- echo "Secret created successfully."
+ echo "Create the secret ${SECRET_NAME} with all necessary key-value pairs"
+ exit 1;
 fi
 
 # Step 3: Set up Network Resources
@@ -355,20 +367,28 @@ echo "Step 7: Updating Task Definition..."
 
 # Create a temporary task definition with updated values
 TMP_TASK_DEF=$(mktemp)
-cat ${TASK_DEFINITION_PATH} | \
- jq --arg image "${FULL_IMAGE_NAME}" \
-    --arg role "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/${IAM_ROLE_NAME}" \
-    --arg secret_arn "arn:aws:secretsmanager:${AWS_REGION}:$(aws sts get-caller-identity --query Account --output text):secret:${SECRET_NAME}" \
-    --arg log_group "${LOG_GROUP_NAME}" \
-    --arg region "${AWS_REGION}" \
- '.containerDefinitions[0].image = $image |
-  .executionRoleArn = $role |
-  .containerDefinitions[0].secrets[0].valueFrom = $secret_arn |
-  .containerDefinitions[0].logConfiguration.options."awslogs-group" = $log_group |
-  .containerDefinitions[0].logConfiguration.options."awslogs-region" = $region' > ${TMP_TASK_DEF}
+ cat ${TASK_DEFINITION_PATH} | \
+  jq --arg image "${FULL_IMAGE_NAME}" \
+     --arg role "arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/${IAM_ROLE_NAME}" \
+     --arg secret_key_base_arn "${SECRET_KEY_BASE}" \
+     --arg db_name_arn "${DB_NAME}" \
+     --arg db_hostname_arn "${DB_HOSTNAME}" \
+     --arg db_username_arn "${DB_USERNAME}" \
+     --arg db_password_arn "${DB_PASSWORD}" \
+     --arg log_group "${LOG_GROUP_NAME}" \
+     --arg region "${AWS_REGION}" \
+  '.containerDefinitions[0].image = $image |
+   .executionRoleArn = $role |
+   .containerDefinitions[0].secrets[0].valueFrom = $secret_key_base_arn |
+   .containerDefinitions[0].secrets[1].valueFrom = $db_name_arn |
+   .containerDefinitions[0].secrets[2].valueFrom = $db_hostname_arn |
+   .containerDefinitions[0].secrets[3].valueFrom = $db_username_arn |
+   .containerDefinitions[0].secrets[4].valueFrom = $db_password_arn |
+   .containerDefinitions[0].logConfiguration.options."awslogs-group" = $log_group |
+   .containerDefinitions[0].logConfiguration.options."awslogs-region" = $region' > ${TMP_TASK_DEF}
 
 echo "Registering task definition..."
-aws ecs register-task-definition --cli-input-json file://${TMP_TASK_DEF} > /dev/null
+aws ecs register-task-definition --cli-input-json file://${TMP_TASK_DEF} >> /dev/null
 
 # Step 8: Create or Update ECS Service
 echo "Step 8: Creating or Updating ECS Service..."
