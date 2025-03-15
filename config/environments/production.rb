@@ -93,7 +93,7 @@ Rails.application.configure do
   # Allow accessing the app via IP address
   config.action_controller.forgery_protection_origin_check = false
   # Set session options for better container compatibility
-  config.session_store :cookie_store, key: '_expensetracker_session', secure: false, same_site: :lax
+  config.session_store :cookie_store, key: "_expensetracker_session", secure: false, same_site: :lax
   # Ensure cookies work with your setup
   config.action_dispatch.cookies_same_site_protection = :lax
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
