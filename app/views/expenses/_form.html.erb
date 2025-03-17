@@ -1,32 +1,59 @@
-<%= form_with(model: expense) do |form| %>
-  <% if expense.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(expense.errors.count, "error") %> prohibited this expense from being saved:</h2>
+<div class="bg-white shadow-md rounded-lg overflow-hidden">
+  <div class="px-4 py-2 sm:px-6 bg-gray-50 border-b border-gray-200">
+    <p class="w-2xl text-me text-gray-500 font-bold"><%= expense.new_record? ? "Create a new expense record" : "Update expense details" %></p>
+  </div>
 
-      <ul>
-        <% expense.errors.each do |error| %>
-          <li><%= error.full_message %></li>
+  <div class="px-4 py-5 sm:p-6">
+      <div class="p-4">
+        <%= form_with(model: expense) do |form| %>
+          <% if expense.errors.any? %>
+            <div class="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
+              <h3 class="font-medium text-red-800">
+                <%= pluralize(expense.errors.count, "error") %> prohibited this expense from being saved:
+              </h3>
+              <ul class="list-disc pl-5 mt-2 text-red-700">
+                <% expense.errors.each do |error| %>
+                  <li><%= error.full_message %></li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+            <div>
+              <%= form.label :amount, class: "block mb-1 text-gray-700" %>
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span class="text-gray-500">$</span>
+                </div>
+                <%= form.number_field :amount, class: "w-full pl-7 p-2 border rounded", placeholder: "0.00", step: 0.01 %>
+              </div>
+            </div>
+
+            <div>
+              <%#= form.label "Date", class: "block mb-1 text-gray-700" %>
+              <%#= form.date_field "", { include_blank: false, class: "w-full p-2 border rounded", value: Date.today }%>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <%= form.label :category_id, class: "block mb-1 text-gray-700" %>
+            <%= form.select :category_id,
+                            categories_selector(Category.all),
+                            { include_blank: false },
+                            { class: "w-full p-2 border rounded" } %>
+          </div>
+
+          <div class="mb-4">
+            <%= form.label :description, class: "block mb-1 text-gray-700" %>
+            <%= form.text_area :description, rows: 3, class: "w-full border rounded", placeholder: "Enter expense details..." %>
+          </div>
+
+          <div class="flex justify-center pt-4">
+            <%= link_to "Cancel", expenses_path, class: "bg-white px-4 py-2 border rounded mr-2 text-gray-700" %>
+            <%= form.submit class: "px-4 py-2 bg-indigo-600 text-white rounded" %>
+          </div>
         <% end %>
-      </ul>
-    </div>
-  <% end %>
-
-  <div>
-    <%= form.label :amount, style: "display: block" %>
-    <%= form.text_field :amount %>
+      </div>
   </div>
-
-  <div>
-    <%= form.label :description, style: "display: block" %>
-    <%= form.textarea :description %>
-  </div>
-
-  <div>
-    <%= form.label :category_id, style: "display: block" %>
-    <%= form.select :category_id, categories_selector(Category.all), include_blank: false %>
-  </div>
-
-  <div>
-    <%= form.submit %>
-  </div>
-<% end %>
+</div>
