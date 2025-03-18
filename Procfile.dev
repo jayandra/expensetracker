@@ -1,2 +1,2 @@
-web: bin/rails server -b 'ssl://0.0.0.0:3000?key=config/ssl/localhost.key&cert=config/ssl/localhost.crt'
+web: bin/rails server
 css: bin/rails tailwindcss:watch
