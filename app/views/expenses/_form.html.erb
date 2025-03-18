@@ -32,7 +32,7 @@
 
             <div>
               <%= form.label :date, class: "block mb-1 text-gray-700" %>
-              <%= form.date_field :date, { include_blank: false, class: "w-full p-2 border rounded", value: form.object.date || Date.today }%>
+              <%= form.date_field :date, { include_blank: false, class: "w-full p-2 border rounded", value: form.object.date || Date.today, onClick: "this.showPicker()" } %>
             </div>
           </div>
 
