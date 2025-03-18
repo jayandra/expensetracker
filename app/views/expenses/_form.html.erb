@@ -31,8 +31,8 @@
             </div>
 
             <div>
-              <%#= form.label "Date", class: "block mb-1 text-gray-700" %>
-              <%#= form.date_field "", { include_blank: false, class: "w-full p-2 border rounded", value: Date.today }%>
+              <%= form.label :date, class: "block mb-1 text-gray-700" %>
+              <%= form.date_field :date, { include_blank: false, class: "w-full p-2 border rounded", value: form.object.date || Date.today }%>
             </div>
           </div>
 

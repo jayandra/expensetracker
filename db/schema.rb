@@ -10,7 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_03_12_223821) do
+ActiveRecord::Schema[8.0].define(version: 2025_03_18_040438) do
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_catalog.plpgsql"
+
   create_table "categories", force: :cascade do |t|
     t.string "name"
     t.integer "parent_id"
@@ -25,6 +28,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_03_12_223821) do
     t.integer "category_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "date"
     t.index ["category_id"], name: "index_expenses_on_category_id"
   end
 

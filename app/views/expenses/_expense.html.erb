@@ -1,5 +1,10 @@
 <div id="<%= dom_id expense %>">
   <p>
+    <strong>Date:</strong>
+    <%= expense.date&.strftime("%b %d, %Y") %>
+  </p>
+
+  <p>
     <strong>Amount:</strong>
     <%= expense.amount %>
   </p>
