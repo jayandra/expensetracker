@@ -1,23 +1,12 @@
 <div class="bg-white shadow-md rounded-lg overflow-hidden">
   <div class="px-4 py-2 sm:px-6 bg-gray-50 border-b border-gray-200">
-    <p class="w-2xl text-me text-gray-500 font-bold"><%= expense.new_record? ? "Create a new expense record" : "Update expense details" %></p>
+    <p class="w-2xl text-me text-gray-500 font-bold"><%= action_name == "new" ? "Create a new expense record" : "Update expense details" %></p>
   </div>
 
   <div class="px-4 py-5 sm:p-6">
       <div class="p-4">
         <%= form_with(model: expense) do |form| %>
-          <% if expense.errors.any? %>
-            <div class="bg-red-50 border-l-4 border-red-400 p-3 mb-4">
-              <h3 class="font-medium text-red-800">
-                <%= pluralize(expense.errors.count, "error") %> prohibited this expense from being saved:
-              </h3>
-              <ul class="list-disc pl-5 mt-2 text-red-700">
-                <% expense.errors.each do |error| %>
-                  <li><%= error.full_message %></li>
-                <% end %>
-              </ul>
-            </div>
-          <% end %>
+          <%= render "layouts/validation_errors", validation_errors:@expense.errors if @expense.errors.present? %>
 
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
             <div>
