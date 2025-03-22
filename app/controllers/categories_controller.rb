@@ -3,7 +3,7 @@ class CategoriesController < ApplicationController
 
   # GET /categories or /categories.json
   def index
-    @root_categories = Category.roots
+    @root_categories = scoped_categories.roots
   end
 
   # GET /categories/1 or /categories/1.json
@@ -58,9 +58,16 @@ class CategoriesController < ApplicationController
   end
 
   private
+    def scoped_categories
+      Current.user.categories
+    end
     # Use callbacks to share common setup or constraints between actions.
     def set_category
-      @category = Category.find(params.expect(:id))
+      @category = scoped_categories.find_by(id: params.expect(:id))
+      if @category.nil?
+        @category = Category.new
+        @category.errors.add(:base, "Could not find requested category, or it doesn't belong to the user.")
+      end
     end
 
     # Only allow a list of trusted parameters through.

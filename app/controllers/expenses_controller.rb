@@ -3,7 +3,7 @@ class ExpensesController < ApplicationController
 
   # GET /expenses or /expenses.json
   def index
-    @expenses = Expense.all.order(date: :desc)
+    @expenses = scoped_expenses
   end
 
   # GET /expenses/1 or /expenses/1.json
@@ -58,9 +58,22 @@ class ExpensesController < ApplicationController
   end
 
   private
+
+    def scoped_expenses
+      Expense.joins(:category)
+             .where(categories: { user_id: Current.user.id })
+             .order(date: :desc)
+    end
+
     # Use callbacks to share common setup or constraints between actions.
     def set_expense
-      @expense = Expense.find(params.expect(:id))
+      e = Expense.find(params.expect(:id))
+      if e.category.user == Current.user
+        @expense = e
+      else
+        @expense = Expense.new
+        @expense.errors.add(:base, "Could not find requested expense, or it doesn't belong to the user.")
+      end
     end
 
     # Only allow a list of trusted parameters through.
