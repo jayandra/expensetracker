@@ -32,7 +32,7 @@ class SessionsController < ApplicationController
     if @user.save
       start_new_session_for @user
       Category.seed_category_for_new_user(@user)
-      WelcomeMailer.welcome_email(@user).deliver_later
+      SendEmailsJob.perform_later(@user, :signup)
       redirect_to categories_path, notice: "Welcome to ExpenseTracker!"
     else
       render :signup, status: :unprocessable_entity
