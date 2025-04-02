@@ -18,4 +18,6 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "expenses#index"
+
+  mount MissionControl::Jobs::Engine, at: "/admin/jobs"
 end

@@ -67,3 +67,5 @@ gem "pg"
 gem "tailwindcss-ruby", "~> 4.0"
 
 gem "tailwindcss-rails", "~> 4.2"
+
+gem "mission_control-jobs", "~> 1.0"
