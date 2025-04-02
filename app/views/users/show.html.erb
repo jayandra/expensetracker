@@ -1,0 +1,24 @@
+<div class="mx-auto md:w-2/3 w-full">
+  <div class="bg-white shadow rounded">
+    <div class="px-4 py-2 sm:px-6 border-b border-gray-200">
+      <p class="w-2xl text-me text-gray-500 font-bold">Profile</p>
+    </div>
+
+    <div class="p-4">
+      <div class="my-5 flex">
+        <div class="font-bold w-24 text-gray-500">Email:</div>
+        <div><%= @user.email_address %></div>
+      </div>
+
+      <div class="my-5 flex">
+        <div class="font-bold w-24 text-gray-500">Password:</div>
+        <div>******</div>
+      </div>
+
+      <div class="flex pt-4">
+        <%= link_to "Edit Profile", edit_user_path, class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+        <%= link_to "Go Home", root_path, class: "px-4 py-2 text-gray-700 underline hover:no-underline" %>
+      </div>
+    </div>
+  </div>
+</div>

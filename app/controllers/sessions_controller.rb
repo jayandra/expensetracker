@@ -1,5 +1,5 @@
 class SessionsController < ApplicationController
-  allow_unauthenticated_access only: %i[ new create signup complete_signup]
+  allow_unauthenticated_access only: %i[ new create]
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_session_url, alert: "Try again later." }
 
   def new
@@ -23,21 +23,7 @@ class SessionsController < ApplicationController
   end
 
 
-  def signup
-    render :signup
-  end
 
-  def complete_signup
-    @user = User.new(session_params)
-    if @user.save
-      start_new_session_for @user
-      Category.seed_category_for_new_user(@user)
-      SendEmailsJob.perform_later(@user, :signup)
-      redirect_to categories_path, notice: "Welcome to ExpenseTracker!"
-    else
-      render :signup, status: :unprocessable_entity
-    end
-  end
 
   private
 
