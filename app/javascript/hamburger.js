@@ -1,5 +1,4 @@
 function initializeHamburgerMenu() {
-    console.log("function called....");
     const hamburgerButton = document.getElementById("hamburgerButton");
     const sidePanel = document.getElementById("sidePanel");
 
@@ -19,6 +18,5 @@ function initializeHamburgerMenu() {
 
 // Listen for the Turbo load event, which is triggered after every page change
 document.addEventListener("turbo:load", () => {
-    console.log("turgoload");
     initializeHamburgerMenu();  // Re-initialize hamburger menu logic
 });
