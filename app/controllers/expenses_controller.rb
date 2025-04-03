@@ -1,5 +1,6 @@
 class ExpensesController < ApplicationController
   before_action :set_expense, only: %i[ show edit update destroy ]
+  before_action :scoped_categories, only: %i[ new create edit update ]
 
   # GET /expenses or /expenses.json
   def index
@@ -63,6 +64,10 @@ class ExpensesController < ApplicationController
       Expense.joins(:category)
              .where(categories: { user_id: Current.user.id })
              .order(date: :desc)
+    end
+
+    def scoped_categories
+      @user_categories = Current.user.categories
     end
 
     # Use callbacks to share common setup or constraints between actions.

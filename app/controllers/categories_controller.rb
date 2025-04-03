@@ -1,5 +1,6 @@
 class CategoriesController < ApplicationController
   before_action :set_category, only: %i[ show edit update destroy ]
+  before_action :scoped_categories, only: %i[ new create edit update ]
 
   # GET /categories or /categories.json
   def index
@@ -21,7 +22,7 @@ class CategoriesController < ApplicationController
 
   # POST /categories or /categories.json
   def create
-    @category = Category.new(category_params)
+    @category = Current.user.categories.new(category_params)
 
     respond_to do |format|
       if @category.save
@@ -59,7 +60,7 @@ class CategoriesController < ApplicationController
 
   private
     def scoped_categories
-      Current.user.categories
+      @user_categories = Current.user.categories
     end
     # Use callbacks to share common setup or constraints between actions.
     def set_category

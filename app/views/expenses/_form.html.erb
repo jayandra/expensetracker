@@ -28,7 +28,7 @@
           <div class="mb-4">
             <%= form.label :category_id, class: "block mb-1 text-gray-700" %>
             <%= form.select :category_id,
-                            categories_selector(Category.all),
+                            categories_selector(@user_categories),
                             { include_blank: false },
                             { class: "w-full p-2 border rounded" } %>
           </div>

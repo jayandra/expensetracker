@@ -15,7 +15,7 @@
       <div class="mb-4">
         <%= form.label :parent_id, "Parent Category", class: "block mb-1 text-gray-700" %>
         <%= form.select :parent_id,
-                        categories_selector(Category.all),
+                        categories_selector(@user_categories),
                         { include_blank: "No parent (top-level category)" },
                         { class: "w-full p-2 border rounded" } %>
       </div>
