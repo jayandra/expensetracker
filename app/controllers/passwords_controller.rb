@@ -7,7 +7,11 @@ class PasswordsController < ApplicationController
 
   def create
     if user = User.find_by(email_address: params[:email_address])
-      SendEmailsJob.perform_later(user, :password_reset)
+      if ENV["DISABLE_ASYNC_JOBS"] == true || Rails.application.credentials.disable_async_jobs == true
+        PasswordsMailer.reset(user).deliver_now
+      else
+        SendEmailsJob.perform_later(user, :password_reset)
+      end
     end
 
     redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)."

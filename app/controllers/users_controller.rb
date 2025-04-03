@@ -9,7 +9,11 @@ class UsersController < ApplicationController
     if @user.save
       start_new_session_for @user
       Category.seed_category_for_new_user(@user)
-      SendEmailsJob.perform_later(@user, :signup)
+      if ENV["DISABLE_ASYNC_JOBS"] == true || Rails.application.credentials.disable_async_jobs == true
+        WelcomeMailer.welcome_email(user).deliver_now
+      else
+        SendEmailsJob.perform_later(@user, :signup)
+      end
       redirect_to categories_path, notice: "Welcome to ExpenseTracker!"
     else
       render :new, status: :unprocessable_entity

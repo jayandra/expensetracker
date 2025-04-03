@@ -28,15 +28,29 @@ test:
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.
+
+#production:
+#  primary: &production_primary
+#    <<: *default
+#    adapter: postgresql
+#    database: <%#= ENV['DB_NAME'] %>
+#    host: <%#= ENV['DB_HOSTNAME'] %>
+#    username: <%#= ENV['DB_USERNAME'] %>
+#    password: <%#= ENV['DB_PASSWORD'] %>
+#    port: 5432
+#  cache:
+#    <<: *production_primary
+#  queue:
+#    <<: *production_primary
+#  cable:
+#    <<: *production_primary
+
 production:
   primary: &production_primary
     <<: *default
-    adapter: postgresql
-    database: <%= ENV['DB_NAME'] %>
-    host: <%= ENV['DB_HOSTNAME'] %>
-    username: <%= ENV['DB_USERNAME'] %>
-    password: <%= ENV['DB_PASSWORD'] %>
-    port: 5432
+    database: expensetracker_production
+    username: expensetracker
+    password: <%= ENV["DATABASE_PASSWORD"] %>
   cache:
     <<: *production_primary
   queue:
