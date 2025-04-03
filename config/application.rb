@@ -24,7 +24,7 @@ module Expensetracker
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    config.action_mailer.default_url_options = { host: "expensetracker.com" }
+    config.action_mailer.default_url_options = { host: ENV["MAILER_HOST"] || Rails.application.credentials.smtp&.hostname }
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.raise_delivery_errors = true
     smtp_username = ENV["EMAIL_USERNAME"]  || Rails.application.credentials.smtp&.username
