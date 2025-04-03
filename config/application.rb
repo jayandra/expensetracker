@@ -27,8 +27,8 @@ module Expensetracker
     config.action_mailer.default_url_options = { host: "expensetracker.com" }
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.raise_delivery_errors = true
-    smtp_username = ENV["EMAIL_USERNAME"]  || Rails.application.credentials.smtp.username
-    smtp_password = ENV["EMAIL_PASSWORD"]  || Rails.application.credentials.smtp.password
+    smtp_username = ENV["EMAIL_USERNAME"]  || Rails.application.credentials.smtp&.username
+    smtp_password = ENV["EMAIL_PASSWORD"]  || Rails.application.credentials.smtp&.password
     config.action_mailer.smtp_settings = {
       address:         "smtp.gmail.com",
       port:            587,
