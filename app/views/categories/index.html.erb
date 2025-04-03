@@ -3,8 +3,10 @@
 <%= render 'layouts/notice' %>
 
 <div class="categories-container">
-  <div class="p-4 bg-gray-50 border-b">
+  <div class="flex p-4 bg-gray-50 border-b">
     <h2 class="text-xl font-semibold">Category Hierarchy</h2>
+    <span class="pl-5 pt-1 text-gray-700 underline hover:no-underline" id="accordion_show_all">show-all</span>
+    <span class="pl-5 pt-1 text-gray-700 underline hover:no-underline" id="accordion_hide_all">hide-all</span>
   </div>
 
   <%= render partial: 'category_tree', locals: { categories: @root_categories } %>
