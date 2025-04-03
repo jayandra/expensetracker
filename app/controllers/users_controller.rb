@@ -41,7 +41,7 @@ class UsersController < ApplicationController
   private
 
   def user_params
-    params.expect(user: [:email_address, :current_password, :password, :password_confirmation])
+    params.expect(user: [ :email_address, :current_password, :password, :password_confirmation ])
   end
 
   def validate_current_password

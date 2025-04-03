@@ -31,5 +31,3 @@
   Expense.create(amount: 20+i, description: "Expense for category #{utility.id}", category_id: utility.id, date: Date.today)
   Expense.create(amount: 1+i, description: "Expense for category #{water.id}", category_id: water.id, date: Date.today)
 end
-
-

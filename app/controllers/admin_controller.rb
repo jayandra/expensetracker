@@ -3,5 +3,4 @@ class AdminController < ActionController::Base
 
   def jobs
   end
-
 end
