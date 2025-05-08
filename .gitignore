@@ -34,7 +34,12 @@
 /config/master.key
 .idea
 .aider*
+.history/*
 /config/deploy/.env.deploy
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+config/deploy/terraform/production.tfvars
+config/deploy/terraform/.terraform*
+config/deploy/terraform/terraform.tfstate*
