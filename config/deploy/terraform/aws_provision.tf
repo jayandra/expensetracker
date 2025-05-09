@@ -231,7 +231,8 @@ resource "aws_secretsmanager_secret_version" "project_secrets_version" {
     DB_USERNAME = var.db_username
     DB_PASSWORD = var.db_password
     DB_NAME     = var.db_name
-    SECRET_KEY_BASE = var.rails_secret_key_base
+    RAILS_MASTER_KEY = var.rails_master_key
+    DISABLE_ASYNC_JOBS = var.disable_async_jobs
   })
 }
 
@@ -483,8 +484,12 @@ resource "aws_ecs_task_definition" "rails_task" {
           valueFrom = "${local.secret_arn}:DB_NAME::"                                                                                                                                                                    
         },                                                                                                                                                                                                               
         {                                                                                                                                                                                                                
-          name      = "SECRET_KEY_BASE"                                                                                                                                                                                  
-          valueFrom = "${local.secret_arn}:SECRET_KEY_BASE::"                                                                                                                                                            
+          name      = "RAILS_MASTER_KEY"                                                                                                                                                                                  
+          valueFrom = "${local.secret_arn}:RAILS_MASTER_KEY::"                                                                                                                                                            
+        },
+        {                                                                                                                                                                                                                
+          name      = "DISABLE_ASYNC_JOBS"                                                                                                                                                                                  
+          valueFrom = "${local.secret_arn}:DISABLE_ASYNC_JOBS::"                                                                                                                                                            
         }
       ]
     }

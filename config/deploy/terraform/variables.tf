@@ -10,6 +10,12 @@ variable "aws_region" {
     default     = "us-east-1"
 }
 
+variable "disable_async_jobs" {
+    description = "Controls if jobs are done synchronously or asynchronously"
+    type        = bool
+    default     = false
+}
+
 
 variable "db_username"{
   type = string
@@ -22,6 +28,6 @@ variable "db_name"{
 }
 
 
-variable "rails_secret_key_base"{
+variable "rails_master_key"{
   type = string
 }
