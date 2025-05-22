@@ -422,8 +422,60 @@ resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
 ##########################
 ##### ECS TASK DEFINITION
 # Defining the ECS task for the Rails application
+locals {
+  ecs_task_common_environment = [
+    {
+      name  = "RAILS_ENV"
+      value = "production"
+    },
+    {
+      name = "BINDING",
+      value = "0.0.0.0"
+    },
+    {
+      name = "DB_ADAPTER",
+      value = "postgresql"
+    }
+  ]
+
+  ecs_task_common_secrets = [
+    {
+      name      = "DB_HOSTNAME"
+      valueFrom = "${local.secret_arn}:DB_HOST::"
+    },
+    {
+      name      = "DB_USERNAME"
+      valueFrom = "${local.secret_arn}:DB_USERNAME::"
+    },
+    {
+      name      = "DB_PASSWORD"
+      valueFrom = "${local.secret_arn}:DB_PASSWORD::"
+    },
+    {
+      name      = "DB_NAME"
+      valueFrom = "${local.secret_arn}:DB_NAME::"
+    },
+    {
+      name      = "RAILS_MASTER_KEY"
+      valueFrom = "${local.secret_arn}:RAILS_MASTER_KEY::"
+    },
+    {
+      name      = "DISABLE_ASYNC_JOBS"
+      valueFrom = "${local.secret_arn}:DISABLE_ASYNC_JOBS::"
+    }
+  ]
+
+  ecs_common_log_configuration = {
+    logDriver = "awslogs"
+    options = {
+      "awslogs-group"         = "/ecs/${var.project_name}"
+      "awslogs-region"        = var.aws_region
+      "awslogs-stream-prefix" = "ecs"
+    }
+  }
+}
 resource "aws_ecs_task_definition" "rails_task" {
-  family                   = "${var.project_name}-task"
+  family                   = "${var.project_name}-rails-task"
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
   network_mode             = "awsvpc"
@@ -437,14 +489,7 @@ resource "aws_ecs_task_definition" "rails_task" {
       image     = "${aws_ecrpublic_repository.project_ecr.repository_uri}:latest"
       essential = true
       # publicly_accessible = true
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = "/ecs/${var.project_name}"
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
+      logConfiguration = local.ecs_common_log_configuration
       portMappings = [
         {
           containerPort = 3000
@@ -452,46 +497,8 @@ resource "aws_ecs_task_definition" "rails_task" {
           protocol      = "tcp"
         }
       ]
-      environment = [
-        {
-          name  = "RAILS_ENV"
-          value = "production"
-        },
-        {
-          name = "BINDING",
-          value = "0.0.0.0"
-        },
-        {                                                                                                                                                                                                            
-         name = "DB_ADAPTER",                                                                                                                                                                                       
-         value = "postgresql"                                                                                                                                                                                       
-       }
-      ]
-      secrets = [
-        {                                                                                                                                                                                                                
-          name      = "DB_HOSTNAME"                                                                                                                                                                                      
-          valueFrom = "${local.secret_arn}:DB_HOST::"                                                                                                                                                                    
-        },                                                                                                                                                                                                               
-        {                                                                                                                                                                                                                
-          name      = "DB_USERNAME"                                                                                                                                                                                      
-          valueFrom = "${local.secret_arn}:DB_USERNAME::"                                                                                                                                                                
-        },                                                                                                                                                                                                               
-        {                                                                                                                                                                                                                
-          name      = "DB_PASSWORD"                                                                                                                                                                                      
-          valueFrom = "${local.secret_arn}:DB_PASSWORD::"                                                                                                                                                                
-        },                                                                                                                                                                                                               
-        {                                                                                                                                                                                                                
-          name      = "DB_NAME"                                                                                                                                                                                          
-          valueFrom = "${local.secret_arn}:DB_NAME::"                                                                                                                                                                    
-        },                                                                                                                                                                                                               
-        {                                                                                                                                                                                                                
-          name      = "RAILS_MASTER_KEY"                                                                                                                                                                                  
-          valueFrom = "${local.secret_arn}:RAILS_MASTER_KEY::"                                                                                                                                                            
-        },
-        {                                                                                                                                                                                                                
-          name      = "DISABLE_ASYNC_JOBS"                                                                                                                                                                                  
-          valueFrom = "${local.secret_arn}:DISABLE_ASYNC_JOBS::"                                                                                                                                                            
-        }
-      ]
+      environment = local.ecs_task_common_environment
+      secrets = local.ecs_task_common_secrets
     }
   ])
 
@@ -500,7 +507,37 @@ resource "aws_ecs_task_definition" "rails_task" {
   ]
 
   tags = {
-    Name = "${var.project_name}-ecs-task-definition"
+    Name = "${var.project_name}-ecs-rails-task-definition"
+  }
+}
+resource "aws_ecs_task_definition" "worker_task" {
+  family                   = "${var.project_name}-worker-task"
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+
+  container_definitions = jsonencode([
+    {
+      name      = "${var.project_name}-app"
+      image     = "${aws_ecrpublic_repository.project_ecr.repository_uri}:latest"
+      essential = true
+      # publicly_accessible = true
+      logConfiguration = local.ecs_common_log_configuration
+      environment = local.ecs_task_common_environment
+      secrets = local.ecs_task_common_secrets
+      command = ["./bin/thrust", "./bin/jobs"]
+    }
+  ])
+
+  depends_on = [
+    aws_db_instance.rails_db
+  ]
+
+  tags = {
+    Name = "${var.project_name}-ecs-worker-task-definition"
   }
 }
 
@@ -508,7 +545,7 @@ resource "aws_ecs_task_definition" "rails_task" {
 ##### ECS SERVICE SETUP
 # Deploying the ECS service to the cluster using Fargate
 resource "aws_ecs_service" "rails_service" {
-  name            = "${var.project_name}-service"
+  name            = "${var.project_name}-rails-service"
   cluster         = aws_ecs_cluster.rails_cluster.id
   task_definition = aws_ecs_task_definition.rails_task.arn
   desired_count   = 1
@@ -532,7 +569,28 @@ resource "aws_ecs_service" "rails_service" {
   ]
 
   tags = {
-    Name = "${var.project_name}-ecs-service"
+    Name = "${var.project_name}-ecs-rails-service"
+  }
+}
+resource "aws_ecs_service" "worker_service" {
+  name            = "${var.project_name}-worker-service"
+  cluster         = aws_ecs_cluster.rails_cluster.id
+  task_definition = aws_ecs_task_definition.worker_task.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = [aws_subnet.main_subnet_1.id]
+    security_groups = [aws_security_group.rails_sg.id]
+    assign_public_ip = true
+  }
+
+  depends_on = [
+    aws_ecs_task_definition.worker_task
+  ]
+
+  tags = {
+    Name = "${var.project_name}-ecs-worker-service"
   }
 }
 
