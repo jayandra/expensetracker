@@ -1,24 +1,43 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+[**Expense Tracker**](http://expense-tracker-load-balancer-4418931.us-east-1.elb.amazonaws.com/session/new) is an app designed to help you keep track of your expenses. Whenever you make a transaction, you can open the installed PWA on your phone or visit it via a browser to add an entry. The app provides a simple and intuitive way to categorize your expenses such that at the end of the month (or whenever you want), you can generate a clear report of your spending during that period.
 
-Things you may want to cover:
+When a user signs up, a default set of categories is pre-populated to help them get started quickly.
 
-* Ruby version
+### Running the app locally
 
-* System dependencies
+- _Assuming you have PostgreSQL installed locally and its credentials are updated in `config/database.yml`:_
 
-* Configuration
+  ```
+  git clone git@github.com:jayandra/expensetracker.git
+  cd expensetracker
+  bundle install
+  rake db:create db:migrate db:seed
+  foreman start -f procfile.dev
+  ```
 
-* Database creation
+### Configure mailer:
 
-* Database initialization
+- For simplicity, SMTP settings are been placed in `config/application.rb` and gets used across all environments.
+- For production, it is recommended to override these settings by adding specific SMTP configurations in `config/environments/production.rb`, which will take precedence over those in application.rb.
 
-* How to run the test suite
+### Deploy the app
 
-* Services (job queues, cache servers, search engines, etc.)
+- Provision AWS resources by running _(this need not be re-run once the resources are in place during the first)_:
+  ```
+  cd config/deploy/terraform
+  terraform init
+  terraform plan -var-file="production.tfvars"
+  terraform apply -var-file="production.tfvars"
+  ```
+- Deploy the app _(this is your go-to method to deploy the app)_:
+  ```
+  bin/deploy
+  ```
+  After deployment, the load balancer will have a publicly accessible URL that routes traffic to the Rails app running inside a private VPN. You will be provided with the load balancer’s URL at the end of the deployment process
 
-* Deployment instructions
+### Background Job
 
-* ...
+- The app uses SolidQueue for background jobs.
+- The `mission-control-jobs` gem is included to provide an interactive dashboard for queue status. You can access this dashboard at `<your-app-domain>/admin/jobs`.
+- HTTP Basic Auth credentials for this dashboard can be viewed by running `rails credentials:show` or updated by running `rails credentials:edit`
