@@ -18,6 +18,57 @@ ECR_REPOSITORY_URI=""
 ECR_REGISTRY_SERVER=""
 LOAD_BALANCER_URL=""
 
+# Determine AWS profile to use                                                                                                                                                                                                                                                                                               
+if [ -n "$AWS_PROFILE" ]; then                                                                                                                                                                                                                                                                                               
+    # Use the profile from environment variable if set                                                                                                                                                                                                                                                                         
+    echo "Using AWS profile from environment variable: $AWS_PROFILE"                                                                                                                                                                                                                                                           
+else                                                                                                                                                                                                                                                                                                                         
+    # List available profiles for user reference                                                                                                                                                                                                                                                                               
+    echo "Available AWS profiles:"                                                                                                                                                                                                                                                                                             
+    aws configure list-profiles                                                                                                                                                                                                                                                                                                
+    echo                                                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                                                                
+    # Prompt user for profile name                                                                                                                                                                                                                                                                                             
+    read -p "Enter AWS profile name (or press Enter to use current session): " USER_PROFILE                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                                                                
+    if [ -n "$USER_PROFILE" ]; then                                                                                                                                                                                                                                                                                            
+        AWS_PROFILE="$USER_PROFILE"                                                                                                                                                                                                                                                                                              
+        echo "Using AWS profile: $AWS_PROFILE"                                                                                                                                                                                                                                                                                   
+    else                                                                                                                                                                                                                                                                                                                       
+        echo "No profile specified, using current AWS session."                                                                                                                                                                                                                                                                  
+        # Check if current session is valid                                                                                                                                                                                                                                                                                      
+        if ! aws sts get-caller-identity &> /dev/null; then                                                                                                                                                                                                                                                                      
+        echo "No active AWS session found. Please specify a profile or configure AWS credentials."                                                                                                                                                                                                                             
+        exit 1                                                                                                                                                                                                                                                                                                                 
+        fi                                                                                                                                                                                                                                                                                                                       
+        echo "Current AWS session is valid."                                                                                                                                                                                                                                                                                     
+    fi                                                                                                                                                                                                                                                                                                                         
+fi                                                                                                                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                                            
+# Check if a profile was specified and prepare profile flag                                                                                                                                                                                                                                                                  
+if [ -n "$AWS_PROFILE" ]; then                                                                                                                                                                                                                                                                                               
+    PROFILE_FLAG="--profile $AWS_PROFILE"                                                                                                                                                                                                                                                                                      
+                                                                                                                                                                                                                                                                                                                                
+    # Check if AWS session is active for the specified profile                                                                                                                                                                                                                                                                 
+    echo "Verifying AWS session for profile $AWS_PROFILE..."                                                                                                                                                                                                                                                                   
+    if ! aws sts get-caller-identity $PROFILE_FLAG &> /dev/null; then                                                                                                                                                                                                                                                          
+        echo "AWS session not active or expired for profile $AWS_PROFILE. Initiating login..."                                                                                                                                                                                                                                   
+        aws sso login $PROFILE_FLAG                                                                                                                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                
+        # Verify login was successful                                                                                                                                                                                                                                                                                            
+        if ! aws sts get-caller-identity $PROFILE_FLAG &> /dev/null; then                                                                                                                                                                                                                                                        
+        echo "Failed to authenticate with AWS. Please check your credentials and try again."                                                                                                                                                                                                                                   
+        exit 1                                                                                                                                                                                                                                                                                                                 
+        fi                                                                                                                                                                                                                                                                                                                       
+        echo "Successfully authenticated with AWS using profile $AWS_PROFILE."                                                                                                                                                                                                                                                   
+    else                                                                                                                                                                                                                                                                                                                       
+        echo "AWS session is active for profile $AWS_PROFILE."                                                                                                                                                                                                                                                                   
+    fi                                                                                                                                                                                                                                                                                                                         
+else                                                                                                                                                                                                                                                                                                                         
+    PROFILE_FLAG=""                                                                                                                                                                                                                                                                                                            
+    echo "Using current AWS session"                                                                                                                                                                                                                                                                                           
+fi
+
 ########## Step 1: Get Terraform outputs
 echo "Getting Terraform outputs..."
 
@@ -65,12 +116,13 @@ echo "IMAGE_TAG=$IMAGE_TAG"
 # Authenticate Docker to ECR public registry
 echo
 echo "Logging into ECR..."
-aws ecr-public get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY_SERVER"
+aws ecr-public get-login-password --region us-east-1 $PROFILE_FLAG | docker login --username AWS --password-stdin public.ecr.aws
 
 # Check if image with current commit hash already exists in ECR
 EXISTING_TAGS=$(aws ecr-public describe-images \
   --repository-name "$(echo "$ECR_REPOSITORY_URI" | cut -d/ -f3)" \
   --region "$AWS_REGION" \
+  $PROFILE_FLAG \  
   --output json \
   --query "imageDetails[?imageTags!=null && contains(join(',', imageTags), '${COMMIT_HASH}-')].imageTags[]" \
   | jq -r '.[]')
@@ -93,18 +145,19 @@ fi
 ############ Step 3: Deploy directly to ECS
 
 for ECS_SERVICE_NAME in "${ECS_SERVICE_NAMES[@]}"; do
+    echo                                                                                                                                                                                                                                                                                                                     
     echo
     echo "Updating ECS service '$ECS_SERVICE_NAME' in cluster '$ECS_CLUSTER_NAME'..."
-    aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_SERVICE_NAME" --force-new-deployment --region "$AWS_REGION" > /dev/null
+    aws ecs update-service --cluster "$ECS_CLUSTER_NAME" --service "$ECS_SERVICE_NAME" --force-new-deployment --region "$AWS_REGION" $PROFILE_FLAG > /dev/null
 
     echo "Waiting for deployment of '$ECS_SERVICE_NAME' to complete..."
-    aws ecs wait services-stable --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE_NAME" --region "$AWS_REGION"
+    aws ecs wait services-stable --cluster "$ECS_CLUSTER_NAME" --services "$ECS_SERVICE_NAME" --region "$AWS_REGION" $PROFILE_FLAG
 done
 
 # Final wait for all services (optional but good for certainty)
 echo
 echo "Waiting for deployment of all services to complete..."
-aws ecs wait services-stable --cluster "$ECS_CLUSTER_NAME" --services "${ECS_SERVICE_NAMES[@]}" --region "$AWS_REGION"
+aws ecs wait services-stable --cluster "$ECS_CLUSTER_NAME" --services "${ECS_SERVICE_NAMES[@]}" --region "$AWS_REGION" $PROFILE_FLAG
 
 echo
 echo "Deployment completed successfully!"

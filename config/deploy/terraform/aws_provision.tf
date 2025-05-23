@@ -1,14 +1,24 @@
 ###### Setting up AWS user ######
-# create a deployer user in IAM and set its key and secret in ~/.aws/credentials
+# If a user is setup via IAM Identity Center (preferred):
+# - aws configure sso
+#   follow the prompts and get the SSO user configured. You should see new profile entery in ~/.aws/config
+# - aws configure list-profiles
+#   This is to list profiles associated. The profile is used to login.
+# - Set the profile provider "aws" > profile section via terraform variable
+# - aws sso login --profile <your profile>
+
+# Alternatively, create a deployer user in IAM and set its key and secret in ~/.aws/credentials
 # run "aws configure". It should use the key and secrets from above steps, so keep hitting enter
 # "aws sts get-caller-identity" should now be working
 # Assign appropriate policies to the user via AWS console web interfact. 
   # An easy approach could be get till "terraform apply" step and whatever permission terraform says missing; keep adding them to the user
 
-
-
 ###### Build and push the image (use bin/deploy for deployment; listed here for info only) ######
 # docker build -t expensetracker .
+
+# aws sso login --profile <your profile>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+# aws ecr-public get-login-password --region us-east-1 --profile <your profile> | docker login --username AWS --password-stdin public.ecr.aws     
+# OR (for traditional IAM user with credentials stored in .aws/credentials)
 # aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
 # Get the latest git commit SHA                                                                                                                                                                            
@@ -29,28 +39,11 @@
 data "aws_availability_zones" "available" {
   state = "available"
 }
-
-# Secret manager tries to fetch it before creating new one.
-data "aws_secretsmanager_secret" "existing_secret" {                                                                                                                                                               
-   name = "${var.project_name}-project_secrets"                                                                                                                                                                     
-   count = 1                                                                                                                                                                                                        
- }
-locals {                                                                                                                                                                                                           
-   # Check if the data source returned a valid ID                                                                                                                                                                   
-   secret_exists = try(data.aws_secretsmanager_secret.existing_secret[0].id != "", false)                                                                                                                              
-                                                                                                                                                                                                                    
-   # Use the existing secret's ID if it exists, otherwise use the new resource's ID                                                                                                                                 
-   secret_id = local.secret_exists ? data.aws_secretsmanager_secret.existing_secret[0].id : aws_secretsmanager_secret.project_secrets[0].id                                                                               
-                                                                                                                                                                                                                    
-   # Use the existing secret's ARN if it exists, otherwise use the new resource's ARN                                                                                                                               
-   secret_arn = local.secret_exists ? data.aws_secretsmanager_secret.existing_secret[0].arn : aws_secretsmanager_secret.project_secrets[0].arn                                                                            
- }
-
-
 ##########################
 ##### PROVIDER CONFIGURATION
 provider "aws" {
   region = var.aws_region
+  profile = var.aws_profile
 }
 
 ##########################
@@ -131,6 +124,23 @@ resource "aws_route_table_association" "private_subnet_2_association" {
   route_table_id = aws_route_table.private_route_table.id
 }
 
+### Adding NAT Gateway for private VPC to access internet ###
+#Without it accessing secrets manager, ECR are failing when the rails and worker service have "assign_public_ip = false"
+# Create an Elastic IP for the NAT Gateway                                                                                                                                                                                                                                                                                   
+resource "aws_eip" "nat_eip" {                                                                                                                                                                                                                                                                                               
+  domain = "vpc"                                                                                                                                                                                                                                                                                                             
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+# Create a NAT Gateway                                                                                                                                                                                                                                                                                                       
+resource "aws_nat_gateway" "nat_gateway" {                                                                                                                                                                                                                                                                                   
+  allocation_id = aws_eip.nat_eip.id                                                                                                                                                                                                                                                                                         
+  subnet_id     = aws_subnet.main_subnet_1.id  # This should be a public subnet                                                                                                                                                                                                                                              
+}                                                                                                                                                                                                                                                                                                                            
+# Update the private route table to route through NAT Gateway                                                                                                                                                                                                                                                                
+resource "aws_route" "private_nat_route" {                                                                                                                                                                                                                                                                                   
+  route_table_id         = aws_route_table.private_route_table.id                                                                                                                                                                                                                                                            
+  destination_cidr_block = "0.0.0.0/0"                                                                                                                                                                                                                                                                                       
+  nat_gateway_id         = aws_nat_gateway.nat_gateway.id                                                                                                                                                                                                                                                                    
+}
 ##########################
 ##### SECURITY GROUP SETUP
 resource "aws_security_group" "rails_lb_sg" {
@@ -217,9 +227,27 @@ resource "aws_security_group" "rails_db_sg" {
   }
 }
 
-
 ##########################
 ##### SECRETS MANAGER
+##########################
+# List all secrets that match the name filter
+data "aws_secretsmanager_secrets" "existing_secrets" {
+  filter {
+    name   = "name"
+    values = ["${var.project_name}-project_secrets"]
+  }
+}
+locals {                                                                                                                                                                                                           
+  # Check if the secret exists by length of filtered list
+  secret_exists = length(data.aws_secretsmanager_secrets.existing_secrets.arns) > 0
+
+  # Get existing secret info if found
+  existing_secret_arn = local.secret_exists ? tolist(data.aws_secretsmanager_secrets.existing_secrets.arns)[0] : ""                                                                                                                     
+
+  # Use the existing secret's ID and arn if it exists, otherwise use the new resource's ID                                                                                                                                                                                                                       
+  secret_arn = local.secret_exists ? local.existing_secret_arn : aws_secretsmanager_secret.project_secrets[0].arn                                                                                                                                                                                                                                                                                         
+ }
+
 # Storing sensitive data like database credentials in Secrets Manager
 resource "aws_secretsmanager_secret" "project_secrets" {
   # Only create if the secret doesn't exist                                                                                                                                                                        
@@ -234,7 +262,7 @@ resource "aws_secretsmanager_secret" "project_secrets" {
 
 # Creating a version for the secret containing the database credentials
 resource "aws_secretsmanager_secret_version" "project_secrets_version" {
-  secret_id     = local.secret_id
+  secret_id     = local.secret_arn
   secret_string = jsonencode({
     DB_HOST     = aws_db_instance.rails_db.address
     DB_USERNAME = var.db_username
@@ -396,7 +424,8 @@ resource "aws_iam_policy" "ecs_task_policy" {
       {
         Action = [
           "s3:ListBucket",  # Example action
-          "s3:GetObject"
+          "s3:GetObject",
+          "secretsmanager:GetSecretValue"
         ]
         Effect   = "Allow"
         Resource = "*"
@@ -566,7 +595,7 @@ resource "aws_ecs_service" "rails_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = [aws_subnet.main_subnet_1.id]
+    subnets          = [aws_subnet.main_subnet_2.id]
     security_groups = [aws_security_group.rails_sg.id]
     assign_public_ip = false
   }
@@ -594,7 +623,7 @@ resource "aws_ecs_service" "worker_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = [aws_subnet.main_subnet_1.id]
+    subnets          = [aws_subnet.main_subnet_2.id]
     security_groups = [aws_security_group.rails_sg.id]
     assign_public_ip = false
   }
