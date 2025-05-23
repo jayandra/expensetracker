@@ -31,3 +31,6 @@ variable "db_name"{
 variable "rails_master_key"{
   type = string
 }
+variable "mailer_host"{
+  type = string
+}

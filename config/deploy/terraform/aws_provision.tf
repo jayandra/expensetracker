@@ -7,9 +7,14 @@
 
 ###### Build and push the image ######
 # docker build -t expensetracker .
-# docker tag expensetracker:latest public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest
 # aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
-# docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest
+
+# Get the latest git commit SHA                                                                                                                                                                            
+#  GIT_SHA=$(git rev-parse --short HEAD)                                                                                                                                                                                                                                                                                                                                                                               
+#  docker tag expensetracker:latest public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}                                                                                                                   
+#  docker tag expensetracker:latest public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest                                                                                                                       
+#  docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}                                                                                                                                        
+#  docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest     
 
 ###### Deploy the image (refer variables.tf to identify what variables need to be set in production.tfvars)######
 # cd config/deploy/terraform
@@ -232,6 +237,7 @@ resource "aws_secretsmanager_secret_version" "project_secrets_version" {
     DB_PASSWORD = var.db_password
     DB_NAME     = var.db_name
     RAILS_MASTER_KEY = var.rails_master_key
+    MAILER_HOST = var.mailer_host
     DISABLE_ASYNC_JOBS = var.disable_async_jobs
   })
 }
@@ -458,6 +464,10 @@ locals {
     {
       name      = "RAILS_MASTER_KEY"
       valueFrom = "${local.secret_arn}:RAILS_MASTER_KEY::"
+    },
+    {
+      name      = "MAILER_HOST"
+      valueFrom = "${local.secret_arn}:MAILER_HOST::"
     },
     {
       name      = "DISABLE_ASYNC_JOBS"
