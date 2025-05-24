@@ -5,7 +5,9 @@
 # Assign appropriate policies to the user via AWS console web interfact. 
   # An easy approach could be get till "terraform apply" step and whatever permission terraform says missing; keep adding them to the user
 
-###### Build and push the image ######
+
+
+###### Build and push the image (use bin/deploy for deployment; listed here for info only) ######
 # docker build -t expensetracker .
 # aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
 
@@ -16,7 +18,9 @@
 #  docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}                                                                                                                                        
 #  docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest     
 
-###### Deploy the image (refer variables.tf to identify what variables need to be set in production.tfvars)######
+###### Deploy the image (use bin/deploy for deployment; listed here for info only) ######
+###### refer variables.tf to identify what variables need to be set in production.tfvars)
+###### the terraform file uses :latest tag. Replace it with the tag from above step, otherwise it will be a no-op
 # cd config/deploy/terraform
 # terraform init
 # terraform plan -var-file="production.tfvars"
@@ -662,8 +666,11 @@ output "ecs_cluster_name" {
   value = aws_ecs_cluster.rails_cluster.name
 }
 
-output "ecs_service_name" {
-  value = aws_ecs_service.rails_service.name
+output "ecs_service_names" {
+  value = {
+    server = aws_ecs_service.rails_service.name,
+    worker   = aws_ecs_service.worker_service.name
+  }
 }
 
 output "load_balancer_url" {
