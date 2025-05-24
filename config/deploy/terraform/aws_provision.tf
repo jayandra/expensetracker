@@ -568,7 +568,7 @@ resource "aws_ecs_service" "rails_service" {
   network_configuration {
     subnets          = [aws_subnet.main_subnet_1.id]
     security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   load_balancer {
@@ -596,7 +596,7 @@ resource "aws_ecs_service" "worker_service" {
   network_configuration {
     subnets          = [aws_subnet.main_subnet_1.id]
     security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = true
+    assign_public_ip = false
   }
 
   depends_on = [
