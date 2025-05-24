@@ -183,6 +183,14 @@ resource "aws_security_group" "rails_sg" {
     security_groups = [aws_security_group.rails_lb_sg.id]  # Allow only ALB to talk to Rails container
   }
 
+  # Allow health check traffic from ALB                                                                                                                                                                                                                                                   
+  ingress {                                                                                                                                                                                                                                                                               
+    from_port   = 3000                                                                                                                                                                                                                                                                    
+    to_port     = 3000                                                                                                                                                                                                                                                                    
+    protocol    = "tcp"                                                                                                                                                                                                                                                                   
+    cidr_blocks = [aws_vpc.main.cidr_block]  # Allow from within the VPC                                                                                                                                                                                                                  
+  } 
+
   # Allow all outbound traffic
   egress {
     from_port   = 0
@@ -488,14 +496,17 @@ locals {
     }
   }
 }
+
 resource "aws_ecs_task_definition" "rails_task" {
   family                   = "${var.project_name}-rails-task"
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  network_mode             = "bridge"
+  requires_compatibilities = ["EC2"]
+  # Remove task-level CPU and memory constraints                                                                                                                                                                                                                                          
+  # cpu                      = "256"
+  # memory                   = "512"
+  # memoryReservation        = "256"
 
   container_definitions = jsonencode([
     {
@@ -511,8 +522,44 @@ resource "aws_ecs_task_definition" "rails_task" {
           protocol      = "tcp"
         }
       ]
-      environment = local.ecs_task_common_environment
+      environment = concat(local.ecs_task_common_environment, [                                                                                                                                                                                                                           
+        {                                                                                                                                                                                                                                                                                 
+          name  = "PORT",                                                                                                                                                                                                                                                                 
+          value = "3000"                                                                                                                                                                                                                                                                  
+        },                                                                                                                                                                                                                                                                                
+        {                                                                                                                                                                                                                                                                                 
+          name  = "RAILS_LOG_TO_STDOUT",                                                                                                                                                                                                                                                  
+          value = "true"                                                                                                                                                                                                                                                                  
+        },                                                                                                                                                                                                                                                                                
+        {                                                                                                                                                                                                                                                                                 
+          name  = "RAILS_SERVE_STATIC_FILES",                                                                                                                                                                                                                                             
+          value = "true"                                                                                                                                                                                                                                                                  
+        },                                                                                                                                                                                                                                                                                
+        {                                                                                                                                                                                                                                                                                 
+          name  = "BINDING",                                                                                                                                                                                                                                                              
+          value = "0.0.0.0"                                                                                                                                                                                                                                                               
+        }                                                                                                                                                                                                                                                                                 
+      ])                                                                                                                                                                                                                                                                                  
       secrets = local.ecs_task_common_secrets
+
+      healthCheck = {                                                                                                                                                                                                                                                                     
+        command     = ["CMD-SHELL", "curl -f http://localhost:3000/ || exit 1"]                                                                                                                                                                                            
+        interval    = 30                                                                                                                                                                                                                                                                  
+        timeout     = 5                                                                                                                                                                                                                                                                   
+        retries     = 3                                                                                                                                                                                                                                                                   
+        startPeriod = 120  # Give the Rails app more time to start up                                                                                                                                                                                                                     
+      }                                                                                                                                                                                                                                                                                   
+                                                                                                                                                                                                                                                                                          
+      # Explicitly set the command to start the Rails server                                                                                                                                                                                                                              
+      command = ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                          
+      mountPoints = []                                                                                                                                                                                                                                                                    
+      volumesFrom = []        
+
+      # Set container-level memory constraints                                                                                                                                                                                                                                            
+      memory = 512                                                                                                                                                                                                                                                                        
+      memoryReservation = 256                                                                                                                                                                                                                                                             
+      cpu = 256                                                                                                                                                                                                                                                                           
     }
   ])
 
@@ -524,14 +571,16 @@ resource "aws_ecs_task_definition" "rails_task" {
     Name = "${var.project_name}-ecs-rails-task-definition"
   }
 }
+
 resource "aws_ecs_task_definition" "worker_task" {
   family                   = "${var.project_name}-worker-task"
   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  network_mode             = "bridge"
+  requires_compatibilities = ["EC2"]
+  # Remove task-level CPU and memory constraints 
+  # cpu                      = "256"
+  # memory                   = "512"
 
   container_definitions = jsonencode([
     {
@@ -543,6 +592,11 @@ resource "aws_ecs_task_definition" "worker_task" {
       environment = local.ecs_task_common_environment
       secrets = local.ecs_task_common_secrets
       command = ["./bin/thrust", "./bin/jobs"]
+
+      # Set container-level memory constraints                                                                                                                                                                                                                                            
+      memory = 384                                                                                                                                                                                                                                                                        
+      memoryReservation = 256                                                                                                                                                                                                                                                             
+      cpu = 128                                                                                                                                                                                                                                                                           
     }
   ])
 
@@ -557,19 +611,22 @@ resource "aws_ecs_task_definition" "worker_task" {
 
 ##########################
 ##### ECS SERVICE SETUP
-# Deploying the ECS service to the cluster using Fargate
+# Deploying the ECS service to the cluster using EC2 launch mechanism
 resource "aws_ecs_service" "rails_service" {
   name            = "${var.project_name}-rails-service"
   cluster         = aws_ecs_cluster.rails_cluster.id
   task_definition = aws_ecs_task_definition.rails_task.arn
   desired_count   = 1
-  launch_type     = "FARGATE"
+  launch_type     = "EC2"
+  deployment_minimum_healthy_percent = 0                                                                                                                                                                                                                                                  
+  deployment_maximum_percent = 100                                                                                                                                                                                                                                                        
+  force_new_deployment = true                                                                                                                                                                                                                                                             
 
-  network_configuration {
-    subnets          = [aws_subnet.main_subnet_1.id]
-    security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = false
-  }
+  # network_configuration {
+  #   subnets          = [aws_subnet.main_subnet_1.id]
+  #   security_groups = [aws_security_group.rails_sg.id]
+  #   assign_public_ip = false
+  # }
 
   load_balancer {
     target_group_arn = aws_lb_target_group.rails_target_group.arn
@@ -579,25 +636,27 @@ resource "aws_ecs_service" "rails_service" {
 
   depends_on = [
     aws_ecs_task_definition.rails_task,
-    aws_lb_listener.rails_listener
+    aws_lb_listener.rails_listener,
+    aws_autoscaling_group.ecs_asg                                                                                                                                                                                                                                                       
   ]
 
   tags = {
     Name = "${var.project_name}-ecs-rails-service"
   }
 }
+
 resource "aws_ecs_service" "worker_service" {
   name            = "${var.project_name}-worker-service"
   cluster         = aws_ecs_cluster.rails_cluster.id
   task_definition = aws_ecs_task_definition.worker_task.arn
   desired_count   = 1
-  launch_type     = "FARGATE"
+  launch_type     = "EC2"
 
-  network_configuration {
-    subnets          = [aws_subnet.main_subnet_1.id]
-    security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = false
-  }
+  # network_configuration {
+  #   subnets          = [aws_subnet.main_subnet_1.id]
+  #   security_groups = [aws_security_group.rails_sg.id]
+  #   assign_public_ip = false
+  # }
 
   depends_on = [
     aws_ecs_task_definition.worker_task
@@ -628,24 +687,31 @@ resource "aws_lb" "rails_lb" {
 # Defining the Target Group for the Load Balancer
 resource "aws_lb_target_group" "rails_target_group" {
   name     = "${var.project_name}-target-group"
-  port     = 80
+  port     = 3000
   protocol = "HTTP"
   vpc_id   = aws_vpc.main.id
-  target_type = "ip"
+  target_type = "instance"                                                                                                                                                                                                                                                                
+  deregistration_delay = 30                                                                                                                                                                                                                                                               
 
   health_check {
+    enabled             = true
     interval            = 30
     path                = "/up"
     port                = 3000
     protocol            = "HTTP"
-    timeout             = 5
+    timeout             = 10
     healthy_threshold   = 2
-    unhealthy_threshold = 2
+    unhealthy_threshold = 5
+    matcher             = "200-499"  # Accept a wider range of success codes                                                                                                                                                                                                              
   }
 
   tags = {
     Name = "${var.project_name}-target-group"
   }
+
+  lifecycle {                                                                                                                                                                                                                                                                             
+    create_before_destroy = true                                                                                                                                                                                                                                                          
+  }                                                                                                                                                                                                                                                                                       
 }
 
 # Defining the Load Balancer Listener
@@ -658,6 +724,139 @@ resource "aws_lb_listener" "rails_listener" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.rails_target_group.arn
   }
+}
+
+##########################
+##### These are ECS - EC2 launch type specific changes
+
+# Lookup the latest Amazon Linux 2 ECS-optimized AMI provided by AWS
+data "aws_ami" "ecs_optimized" {
+  most_recent = true
+  owners      = ["amazon"]
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
+  }
+}
+
+# Define the launch template that will be used by the EC2 instances in the autoscaling group
+resource "aws_launch_template" "ecs_instance_lt" {
+  name_prefix   = "${var.project_name}-ecs-instance-lt-"
+  image_id      = data.aws_ami.ecs_optimized.id
+  instance_type = "t3.micro"  # EC2 instance type; eligible for free tier (small and burstable). Increase to t3.medium for more memory
+
+  # Uncomment and set your key name for SSH access
+  # key_name      = "your-key-name"
+
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance_profile.name
+  }
+
+  vpc_security_group_ids = [aws_security_group.rails_sg.id]
+
+  # User data script to configure the instance on boot
+  user_data = base64encode(<<EOF
+#!/bin/bash
+# Configure ECS agent
+echo ECS_CLUSTER=${aws_ecs_cluster.rails_cluster.name} >> /etc/ecs/ecs.config
+echo ECS_BACKEND_HOST= >> /etc/ecs/ecs.config
+echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
+echo ECS_AVAILABLE_LOGGING_DRIVERS='["json-file","awslogs"]' >> /etc/ecs/ecs.config
+echo ECS_RESERVED_MEMORY=256 >> /etc/ecs/ecs.config  # Reserve less memory for ECS agent
+
+# Update all packages and install useful tools including SSM agent for remote instance management
+yum update -y
+yum install -y amazon-ssm-agent curl jq
+
+# Enable and start the SSM agent to allow AWS Systems Manager Session Manager access
+systemctl enable amazon-ssm-agent
+systemctl start amazon-ssm-agent
+
+# Restart ECS agent to apply configuration changes made above
+systemctl restart ecs
+EOF
+  )
+
+  # Configure root EBS volume for the EC2 instance
+  block_device_mappings {
+    device_name = "/dev/xvda"
+
+    ebs {
+      volume_size           = 30    # Allocate 30 GB disk space
+      volume_type           = "gp2" # General Purpose SSD
+      delete_on_termination = true
+    }
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}      
+
+resource "aws_autoscaling_group" "ecs_asg" {                                                                                                                                                                                                                                              
+   name_prefix          = "${var.project_name}-ecs-asg-"                                                                                                                                                                                                                                   
+   max_size             = 2                                                                                                                                                                                                                                                                
+   min_size             = 1                                                                                                                                                                                                                                                                
+   desired_capacity     = 1                                                                                                                                                                                                                                                                
+   health_check_type    = "EC2"                                                                                                                                                                                                                                                            
+   health_check_grace_period = 300                                                                                                                                                                                                                                                         
+   force_delete         = true                                                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                           
+   launch_template {                                                                                                                                                                                                                                                                       
+     id      = aws_launch_template.ecs_instance_lt.id                                                                                                                                                                                                                                      
+     version = "$Latest"                                                                                                                                                                                                                                                                   
+   }                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                           
+   vpc_zone_identifier  = [aws_subnet.main_subnet_1.id]                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                                                                           
+   tag {                                                                                                                                                                                                                                                                                   
+     key                 = "Name"                                                                                                                                                                                                                                                          
+     value               = "${var.project_name}-ecs-instance"                                                                                                                                                                                                                              
+     propagate_at_launch = true                                                                                                                                                                                                                                                            
+   }                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                           
+   tag {                                                                                                                                                                                                                                                                                   
+     key                 = "AmazonECSManaged"                                                                                                                                                                                                                                              
+     value               = ""                                                                                                                                                                                                                                                              
+     propagate_at_launch = true                                                                                                                                                                                                                                                            
+   }                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                           
+   lifecycle {                                                                                                                                                                                                                                                                             
+     create_before_destroy = true                                                                                                                                                                                                                                                          
+     ignore_changes = [desired_capacity]                                                                                                                                                                                                                                                   
+   }                                                                                                                                                                                                                                                                                       
+                                                                                                                                                                                                                                                                                           
+   instance_refresh {                                                                                                                                                                                                                                                                      
+     strategy = "Rolling"           # Replace instances gradually                                                                                                                                                                                                                                                              
+     preferences {                                                                                                                                                                                                                                                                         
+       min_healthy_percentage = 0   # Allow all instances to be replaced at once if needed                                                                                                                                                                                                                                                       
+     }                                                                                                                                                                                                                                                                                     
+   }                                                                                                                                                                                                                                                                                       
+ }   
+
+# IAM instance profile to be attached to EC2 instances to grant permissions for ECS and other AWS services
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "${var.project_name}-ecs-instance-profile"
+  role = aws_iam_role.ecs_instance_role.name
+}
+
+# IAM role that EC2 instances assume, allowing them to interact with ECS and AWS services
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "${var.project_name}-ecs-instance-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+# Attach the AWS managed policy that grants permissions necessary for ECS container instances
+resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy_attachment" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
 }
 
 ##########################
