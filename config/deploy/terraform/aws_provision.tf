@@ -124,23 +124,6 @@ resource "aws_route_table_association" "private_subnet_2_association" {
   route_table_id = aws_route_table.private_route_table.id
 }
 
-### Adding NAT Gateway for private VPC to access internet ###
-#Without it accessing secrets manager, ECR are failing when the rails and worker service have "assign_public_ip = false"
-# Create an Elastic IP for the NAT Gateway                                                                                                                                                                                                                                                                                   
-resource "aws_eip" "nat_eip" {                                                                                                                                                                                                                                                                                               
-  domain = "vpc"                                                                                                                                                                                                                                                                                                             
-}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-# Create a NAT Gateway                                                                                                                                                                                                                                                                                                       
-resource "aws_nat_gateway" "nat_gateway" {                                                                                                                                                                                                                                                                                   
-  allocation_id = aws_eip.nat_eip.id                                                                                                                                                                                                                                                                                         
-  subnet_id     = aws_subnet.main_subnet_1.id  # This should be a public subnet                                                                                                                                                                                                                                              
-}                                                                                                                                                                                                                                                                                                                            
-# Update the private route table to route through NAT Gateway                                                                                                                                                                                                                                                                
-resource "aws_route" "private_nat_route" {                                                                                                                                                                                                                                                                                   
-  route_table_id         = aws_route_table.private_route_table.id                                                                                                                                                                                                                                                            
-  destination_cidr_block = "0.0.0.0/0"                                                                                                                                                                                                                                                                                       
-  nat_gateway_id         = aws_nat_gateway.nat_gateway.id                                                                                                                                                                                                                                                                    
-}
 ##########################
 ##### SECURITY GROUP SETUP
 resource "aws_security_group" "rails_lb_sg" {
@@ -595,9 +578,9 @@ resource "aws_ecs_service" "rails_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = [aws_subnet.main_subnet_2.id]
+    subnets          = [aws_subnet.main_subnet_1.id]
     security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -623,9 +606,9 @@ resource "aws_ecs_service" "worker_service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets          = [aws_subnet.main_subnet_2.id]
+    subnets          = [aws_subnet.main_subnet_1.id]
     security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   depends_on = [
