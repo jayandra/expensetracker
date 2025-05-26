@@ -52,5 +52,5 @@ variable "mailer_host"{
 variable "disable_async_jobs" {
     description = "Controls if jobs are done synchronously or asynchronously"
     type        = bool
-    default     = false
+    default     = "false"
 }

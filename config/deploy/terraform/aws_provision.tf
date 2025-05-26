@@ -218,18 +218,11 @@ resource "aws_key_pair" "deployer_key" {
   public_key = file(var.ssh_public_key_path)
 }
 
-resource "aws_eip" "rails_eip" {
-  instance = aws_instance.rails_server.id
-  tags = {
-    Name = "${var.project_name}-rails-eip"
-  }
-}
-
 resource "aws_instance" "rails_server" {
   ami                         = var.ami_id  # Use an AMI with your Rails environment or Ubuntu/Amazon Linux
   instance_type               = "t2.micro"
   subnet_id                   = aws_subnet.main_subnet_1.id
-  associate_public_ip_address = false
+  associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.rails_sg.id]
   key_name                    = aws_key_pair.deployer_key.key_name
 
@@ -373,5 +366,5 @@ output "database_url"{
 }
 
 output "server_ip"{
-  value = aws_eip.rails_eip.public_ip
+  value = aws_instance.rails_server.public_ip
 }

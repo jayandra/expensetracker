@@ -7,10 +7,10 @@ image: r4z8q4u9/expense-tracker-repo
 # Deploy to these servers.
 servers:
   web:
-    - 54.225.202.199
+    - 3.87.135.113
   job:
     hosts:
-      - 54.225.202.199
+      - 3.87.135.113
     cmd: bin/jobs
 
 # Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.

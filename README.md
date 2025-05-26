@@ -1,6 +1,6 @@
 # README
 
-[**Expense Tracker**](http://expense-tracker-load-balancer-4418931.us-east-1.elb.amazonaws.com/session/new) is an app designed to help you keep track of your expenses. Whenever you make a transaction, you can open the installed PWA on your phone or visit it via a browser to add an entry. The app provides a simple and intuitive way to categorize your expenses such that at the end of the month (or whenever you want), you can generate a clear report of your spending during that period.
+[**Expense Tracker**](http://3.87.135.113/) is an app designed to help you keep track of your expenses. Whenever you make a transaction, you can open the installed PWA on your phone or visit it via a browser to add an entry. The app provides a simple and intuitive way to categorize your expenses such that at the end of the month (or whenever you want), you can generate a clear report of your spending during that period.
 
 When a user signs up, a default set of categories is pre-populated to help them get started quickly.
 
@@ -30,11 +30,14 @@ When a user signs up, a default set of categories is pre-populated to help them 
   terraform plan -var-file="production.tfvars"
   terraform apply -var-file="production.tfvars"
   ```
+- Update the server's IP from above in `config/deploy.yml`, `config/deploy/terraform/production.tfvars` (mailer_host variable).
+  Re-run `terraform apply  -var-file="production.tfvars"` for the secrets to be updated with the new value.
 - Do a one-time setup and then deploy the app _(this is your go-to method to deploy the app)_:
   ```
   kamal setup
   kamal deploy
   ```
+  **NOTE**: If you want to deploy to ECS Fargate, refer [commit#637b49a](https://github.com/jayandra/expensetracker/commit/637b49a686f27b9d7fea75ea7c5e0f4b558b31b9) as starting point by revert it
 
 ### Background Job
 
