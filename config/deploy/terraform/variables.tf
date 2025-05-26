@@ -14,6 +14,22 @@ variable "aws_profile" {
     description = "AWS sso profile"
     type        = string
 }
+variable "ami_id"{
+  description = "Amazon Machine image for amazon linux"
+  type = string
+  default = "ami-02457590d33d576c3"
+}
+variable "ssh_public_key_path" {
+  description = "Path to the SSH public key to import"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"  # change as needed
+}
+
+variable "ssh_key_pair_name" {
+  description = "Name of the AWS key pair to create/use"
+  type        = string
+  default     = "expensetracker-keypair"
+}
 
 
 variable "db_username"{

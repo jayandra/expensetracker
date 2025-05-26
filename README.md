@@ -30,11 +30,11 @@ When a user signs up, a default set of categories is pre-populated to help them 
   terraform plan -var-file="production.tfvars"
   terraform apply -var-file="production.tfvars"
   ```
-- Deploy the app _(this is your go-to method to deploy the app)_:
+- Do a one-time setup and then deploy the app _(this is your go-to method to deploy the app)_:
   ```
-  bin/deploy
+  kamal setup
+  kamal deploy
   ```
-  After deployment, the load balancer will have a publicly accessible URL that routes traffic to the Rails app running inside a private VPN. You will be provided with the load balancer’s URL at the end of the deployment process
 
 ### Background Job
 

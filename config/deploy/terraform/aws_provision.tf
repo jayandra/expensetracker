@@ -1,5 +1,9 @@
-###### Setting up AWS user ######
-# If a user is setup via IAM Identity Center (preferred):
+####################################
+###### Setting up AWS user #########
+####################################
+# Create a user in IAM Identity Center and give it power-user-access
+#   refer https://www.youtube.com/watch?v=_KhrGFV_Npw for getting started on IAM Identity Center
+# steps involved:
 # - aws configure sso
 #   follow the prompts and get the SSO user configured. You should see new profile entery in ~/.aws/config
 # - aws configure list-profiles
@@ -7,34 +11,41 @@
 # - Set the profile provider "aws" > profile section via terraform variable
 # - aws sso login --profile <your profile>
 
-# Alternatively, create a deployer user in IAM and set its key and secret in ~/.aws/credentials
+# Deprecated way using IAM user. Listed here for documentation purpose only, 
+# create a deployer user in IAM and set its key and secret in ~/.aws/credentials
 # run "aws configure". It should use the key and secrets from above steps, so keep hitting enter
 # "aws sts get-caller-identity" should now be working
 # Assign appropriate policies to the user via AWS console web interfact. 
   # An easy approach could be get till "terraform apply" step and whatever permission terraform says missing; keep adding them to the user
 
-###### Build and push the image (use bin/deploy for deployment; listed here for info only) ######
-# docker build -t expensetracker .
 
-# aws sso login --profile <your profile>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
-# aws ecr-public get-login-password --region us-east-1 --profile <your profile> | docker login --username AWS --password-stdin public.ecr.aws     
-# OR (for traditional IAM user with credentials stored in .aws/credentials)
-# aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws
+####################################
+###### Provision aws resources #####
+####################################
+# - aws sso login --profile <your profile>
+# - aws ecr-public get-login-password --region us-east-1 --profile <your profile> | docker login --username AWS --password-stdin public.ecr.aws
+# - cd config/deploy/terraform
+# - terraform init
+# - terraform plan -var-file="production.tfvars"
+# - terraform apply -var-file="production.tfvars"
 
-# Get the latest git commit SHA                                                                                                                                                                            
-#  GIT_SHA=$(git rev-parse --short HEAD)                                                                                                                                                                                                                                                                                                                                                                               
-#  docker tag expensetracker:latest public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}                                                                                                                   
-#  docker tag expensetracker:latest public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest                                                                                                                       
-#  docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}                                                                                                                                        
-#  docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:latest     
 
-###### Deploy the image (use bin/deploy for deployment; listed here for info only) ######
-###### refer variables.tf to identify what variables need to be set in production.tfvars)
-###### the terraform file uses :latest tag. Replace it with the tag from above step, otherwise it will be a no-op
-# cd config/deploy/terraform
-# terraform init
-# terraform plan -var-file="production.tfvars"
-# terraform apply -var-file="production.tfvars"
+####################################
+###### Deploy with kamal ###########
+####################################
+# - kamal setup
+# - kamal deploy
+
+
+####################################
+### MISC commands (for info only) ##
+####################################
+# To push an image manually to ECR
+# - GIT_SHA=$(git rev-parse --short HEAD) 
+# - docker build -t expensetracker .                                                                                                                                                                                                                                                                                                                                                                              
+# - docker tag expensetracker:latest public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}
+# - docker push public.ecr.aws/a6a5f8a4/expense-tracker-repo:${GIT_SHA}  
+
 
 data "aws_availability_zones" "available" {
   state = "available"
@@ -126,39 +137,6 @@ resource "aws_route_table_association" "private_subnet_2_association" {
 
 ##########################
 ##### SECURITY GROUP SETUP
-resource "aws_security_group" "rails_lb_sg" {
-  name        = "${var.project_name}-lb-security-group"
-  description = "Allow inbound HTTP and HTTPS traffic to ALB"
-  vpc_id      = aws_vpc.main.id
-
-  tags = {
-    Name = "${var.project_name}-load-balancer-sg"
-  }
-
-  # Allow HTTP traffic from the public internet to the ALB
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow HTTPS traffic from the public internet to the ALB
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  # Allow all outbound traffic (by default, ALB can send outbound traffic to your ECS tasks)
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
 resource "aws_security_group" "rails_sg" {
   name        = "${var.project_name}-rails-security-group"
   description = "Allow inbound traffic from ALB to Rails container"
@@ -168,12 +146,34 @@ resource "aws_security_group" "rails_sg" {
     Name = "${var.project_name}-rails-sg"
   }
 
-  # Allow traffic from ALB to Rails container on port 3000
+  # Allow all HTTP traffic
   ingress {
-    from_port   = 3000
-    to_port     = 3000
+    description = "Allow HTTP from anywhere"
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
-    security_groups = [aws_security_group.rails_lb_sg.id]  # Allow only ALB to talk to Rails container
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Allow HTTPS from anywhere"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Allow ssh from anywhere"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    description = "Allow ICMP ping from anywhere"
+    protocol    = "icmp"
+    from_port   = 8
+    to_port     = -1
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # Allow all outbound traffic
@@ -208,6 +208,48 @@ resource "aws_security_group" "rails_db_sg" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
+
+##########################
+##### EC2
+##########################
+resource "aws_key_pair" "deployer_key" {
+  key_name   = var.ssh_key_pair_name
+  public_key = file(var.ssh_public_key_path)
+}
+
+resource "aws_eip" "rails_eip" {
+  instance = aws_instance.rails_server.id
+  tags = {
+    Name = "${var.project_name}-rails-eip"
+  }
+}
+
+resource "aws_instance" "rails_server" {
+  ami                         = var.ami_id  # Use an AMI with your Rails environment or Ubuntu/Amazon Linux
+  instance_type               = "t2.micro"
+  subnet_id                   = aws_subnet.main_subnet_1.id
+  associate_public_ip_address = false
+  vpc_security_group_ids      = [aws_security_group.rails_sg.id]
+  key_name                    = aws_key_pair.deployer_key.key_name
+
+  tags = {
+    Name = "${var.project_name}-rails-ec2"
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    # Update OS packages
+    sudo yum update -y
+
+    # Install Docker
+    sudo yum install -y docker
+    sudo service docker start
+    systemctl enable docker
+
+    #Add the ec2-user to the docker group so that you can run Docker commands without using sudo.
+    sudo usermod -a -G docker ec2-user
+  EOF
 }
 
 ##########################
@@ -308,17 +350,6 @@ resource "aws_db_subnet_group" "main" {
 }
 
 ##########################
-##### ECS CLUSTER SETUP
-# Creating the ECS cluster for the Rails application
-resource "aws_ecs_cluster" "rails_cluster" {
-  name = "${var.project_name}-cluster"
- 
-  tags = {
-    Name = "${var.project_name}-ecs-cluster"
-  }
-}
-
-##########################
 ##### Cloudwatch Log SETUP
 # Creating the cloudwatch log group and stream
 resource "aws_cloudwatch_log_group" "rails_log_group" {
@@ -332,367 +363,15 @@ resource "aws_cloudwatch_log_stream" "rails_log_stream" {
 }
 
 ##########################
-##### IAM POLICY AND ROLES FOR ECS TASK AND EXECUTION
-
-# Creating the IAM policy for ECS execution role
-resource "aws_iam_policy" "ecs_execution_policy" {
-  name        = "${var.project_name}-ecs-execution-policy"
-  description = "Policy for ECS task execution, allowing CloudWatch Logs, Secrets Manager, and ECR access"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      },
-      {
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ]
-        Effect   = "Allow"
-        Resource = local.secret_arn
-      },
-      {
-        Action = [
-          "ecr:GetAuthorizationToken",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:GetRepositoryPolicy",
-          "ecr:DescribeRepositories",
-          "ecr:GetRepositoryUri"
-        ]
-        Effect   = "Allow"
-        Resource = aws_ecrpublic_repository.project_ecr.arn
-      }
-    ]
-  })
-}
-
-# Creating an IAM role for ECS task execution
-resource "aws_iam_role" "ecs_execution_role" {
-  name = "${var.project_name}-ecs-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-# Attaching the execution policy to the ECS execution role
-resource "aws_iam_role_policy_attachment" "ecs_execution_policy_attachment" {
-  policy_arn = aws_iam_policy.ecs_execution_policy.arn
-  role       = aws_iam_role.ecs_execution_role.name
-}
-
-# Creating the IAM policy for ECS task role (example policy if needed)
-resource "aws_iam_policy" "ecs_task_policy" {
-  name        = "${var.project_name}-ecs-task-policy"
-  description = "Policy for ECS tasks to allow necessary actions"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "s3:ListBucket",  # Example action
-          "s3:GetObject",
-          "secretsmanager:GetSecretValue"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-# Creating an IAM role for ECS tasks
-resource "aws_iam_role" "ecs_task_role" {
-  name = "${var.project_name}-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-# Attaching the ECS task policy to the ECS task role
-resource "aws_iam_role_policy_attachment" "ecs_task_policy_attachment" {
-  policy_arn = aws_iam_policy.ecs_task_policy.arn
-  role       = aws_iam_role.ecs_task_role.name
-}
-
-##########################
-##### ECS TASK DEFINITION
-# Defining the ECS task for the Rails application
-locals {
-  ecs_task_common_environment = [
-    {
-      name  = "RAILS_ENV"
-      value = "production"
-    },
-    {
-      name = "BINDING",
-      value = "0.0.0.0"
-    },
-    {
-      name = "DB_ADAPTER",
-      value = "postgresql"
-    }
-  ]
-
-  ecs_task_common_secrets = [
-    {
-      name      = "DB_HOSTNAME"
-      valueFrom = "${local.secret_arn}:DB_HOST::"
-    },
-    {
-      name      = "DB_USERNAME"
-      valueFrom = "${local.secret_arn}:DB_USERNAME::"
-    },
-    {
-      name      = "DB_PASSWORD"
-      valueFrom = "${local.secret_arn}:DB_PASSWORD::"
-    },
-    {
-      name      = "DB_NAME"
-      valueFrom = "${local.secret_arn}:DB_NAME::"
-    },
-    {
-      name      = "RAILS_MASTER_KEY"
-      valueFrom = "${local.secret_arn}:RAILS_MASTER_KEY::"
-    },
-    {
-      name      = "MAILER_HOST"
-      valueFrom = "${local.secret_arn}:MAILER_HOST::"
-    },
-    {
-      name      = "DISABLE_ASYNC_JOBS"
-      valueFrom = "${local.secret_arn}:DISABLE_ASYNC_JOBS::"
-    }
-  ]
-
-  ecs_common_log_configuration = {
-    logDriver = "awslogs"
-    options = {
-      "awslogs-group"         = "/ecs/${var.project_name}"
-      "awslogs-region"        = var.aws_region
-      "awslogs-stream-prefix" = "ecs"
-    }
-  }
-}
-resource "aws_ecs_task_definition" "rails_task" {
-  family                   = "${var.project_name}-rails-task"
-  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-
-  container_definitions = jsonencode([
-    {
-      name      = "${var.project_name}-app"
-      image     = "${aws_ecrpublic_repository.project_ecr.repository_uri}:latest"
-      essential = true
-      # publicly_accessible = true
-      logConfiguration = local.ecs_common_log_configuration
-      portMappings = [
-        {
-          containerPort = 3000
-          hostPort      = 3000
-          protocol      = "tcp"
-        }
-      ]
-      environment = local.ecs_task_common_environment
-      secrets = local.ecs_task_common_secrets
-    }
-  ])
-
-  depends_on = [
-    aws_db_instance.rails_db
-  ]
-
-  tags = {
-    Name = "${var.project_name}-ecs-rails-task-definition"
-  }
-}
-resource "aws_ecs_task_definition" "worker_task" {
-  family                   = "${var.project_name}-worker-task"
-  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-
-  container_definitions = jsonencode([
-    {
-      name      = "${var.project_name}-app"
-      image     = "${aws_ecrpublic_repository.project_ecr.repository_uri}:latest"
-      essential = true
-      # publicly_accessible = true
-      logConfiguration = local.ecs_common_log_configuration
-      environment = local.ecs_task_common_environment
-      secrets = local.ecs_task_common_secrets
-      command = ["./bin/thrust", "./bin/jobs"]
-    }
-  ])
-
-  depends_on = [
-    aws_db_instance.rails_db
-  ]
-
-  tags = {
-    Name = "${var.project_name}-ecs-worker-task-definition"
-  }
-}
-
-##########################
-##### ECS SERVICE SETUP
-# Deploying the ECS service to the cluster using Fargate
-resource "aws_ecs_service" "rails_service" {
-  name            = "${var.project_name}-rails-service"
-  cluster         = aws_ecs_cluster.rails_cluster.id
-  task_definition = aws_ecs_task_definition.rails_task.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = [aws_subnet.main_subnet_1.id]
-    security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = true
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.rails_target_group.arn
-    container_name   = "${var.project_name}-app"
-    container_port   = 3000
-  }
-
-  depends_on = [
-    aws_ecs_task_definition.rails_task,
-    aws_lb_listener.rails_listener
-  ]
-
-  tags = {
-    Name = "${var.project_name}-ecs-rails-service"
-  }
-}
-resource "aws_ecs_service" "worker_service" {
-  name            = "${var.project_name}-worker-service"
-  cluster         = aws_ecs_cluster.rails_cluster.id
-  task_definition = aws_ecs_task_definition.worker_task.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = [aws_subnet.main_subnet_1.id]
-    security_groups = [aws_security_group.rails_sg.id]
-    assign_public_ip = true
-  }
-
-  depends_on = [
-    aws_ecs_task_definition.worker_task
-  ]
-
-  tags = {
-    Name = "${var.project_name}-ecs-worker-service"
-  }
-}
-
-##########################
-##### LOAD BALANCER
-# Creating the Application Load Balancer
-resource "aws_lb" "rails_lb" {
-  name               = "${var.project_name}-load-balancer"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups   = [aws_security_group.rails_lb_sg.id]
-  subnets            = [aws_subnet.main_subnet_1.id, aws_subnet.main_subnet_2.id]
-
-  enable_deletion_protection = false
-
-  tags = {
-    Name = "${var.project_name}-load-balancer"
-  }
-}
-
-# Defining the Target Group for the Load Balancer
-resource "aws_lb_target_group" "rails_target_group" {
-  name     = "${var.project_name}-target-group"
-  port     = 80
-  protocol = "HTTP"
-  vpc_id   = aws_vpc.main.id
-  target_type = "ip"
-
-  health_check {
-    interval            = 30
-    path                = "/up"
-    port                = 3000
-    protocol            = "HTTP"
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-
-  tags = {
-    Name = "${var.project_name}-target-group"
-  }
-}
-
-# Defining the Load Balancer Listener
-resource "aws_lb_listener" "rails_listener" {
-  load_balancer_arn = aws_lb.rails_lb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.rails_target_group.arn
-  }
-}
-
-##########################
 ##### OUTPUTS
-output "ecs_cluster_name" {
-  value = aws_ecs_cluster.rails_cluster.name
-}
-
-output "ecs_service_names" {
-  value = {
-    server = aws_ecs_service.rails_service.name,
-    worker   = aws_ecs_service.worker_service.name
-  }
-}
-
-output "load_balancer_url" {
-  value = aws_lb.rails_lb.dns_name
-}
-
 output "repository_uri" {
   value = aws_ecrpublic_repository.project_ecr.repository_uri
 }
 
 output "database_url"{
   value = aws_db_instance.rails_db.endpoint
+}
+
+output "server_ip"{
+  value = aws_eip.rails_eip.public_ip
 }
