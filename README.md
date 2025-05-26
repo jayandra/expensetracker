@@ -1,6 +1,6 @@
 # README
 
-[**Expense Tracker**](http://3.87.135.113/) is an app designed to help you keep track of your expenses. Whenever you make a transaction, you can open the installed PWA on your phone or visit it via a browser to add an entry. The app provides a simple and intuitive way to categorize your expenses such that at the end of the month (or whenever you want), you can generate a clear report of your spending during that period.
+[**Expense Tracker**](https://et.yoursolutionguy.com/session/new) is an app designed to help you keep track of your expenses. Whenever you make a transaction, you can open the installed PWA on your phone or visit it via a browser to add an entry. The app provides a simple and intuitive way to categorize your expenses such that at the end of the month (or whenever you want), you can generate a clear report of your spending during that period.
 
 When a user signs up, a default set of categories is pre-populated to help them get started quickly.
 
@@ -44,3 +44,7 @@ When a user signs up, a default set of categories is pre-populated to help them 
 - The app uses SolidQueue for background jobs.
 - The `mission-control-jobs` gem is included to provide an interactive dashboard for queue status. You can access this dashboard at `<your-app-domain>/admin/jobs`.
 - HTTP Basic Auth credentials for this dashboard can be viewed by running `rails credentials:show` or updated by running `rails credentials:edit`
+
+### PWA
+
+ExpenseTracker can be installed to your mobile as PWA. Simply open the app in a browser and you’ll be prompted to install it.
