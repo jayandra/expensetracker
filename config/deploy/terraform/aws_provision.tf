@@ -198,7 +198,7 @@ resource "aws_security_group" "rails_db_sg" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Public access (be cautious with this)
+    security_groups = [aws_security_group.rails_sg.id]
   }
 
   # Allow all outbound traffic
@@ -320,7 +320,7 @@ resource "aws_db_instance" "rails_db" {
   multi_az            = false
   storage_type        = "gp2"
   backup_retention_period = 7
-  publicly_accessible = true
+  publicly_accessible = false
   deletion_protection = true
 
   # Final snapshot settings
