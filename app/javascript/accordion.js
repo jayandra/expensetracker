@@ -31,12 +31,18 @@ document.addEventListener("turbo:load", () => {
         })
     }
 
-    document.getElementById("accordion_hide_all").addEventListener('click', (e) =>{
-        Array.from(accordionChildren).forEach(element => element.classList.add('hidden'));
-        Array.from(accordionIcons).forEach(element => element.textContent = '▶');
-    })
-    document.getElementById("accordion_show_all").addEventListener('click', (e) =>{
-        Array.from(accordionChildren).forEach(element => element.classList.remove('hidden'));
-        Array.from(accordionIcons).forEach(element => element.textContent = '▼');
-    })
+    const hideAllButton = document.getElementById("accordion_hide_all");
+    if (hideAllButton) {
+        hideAllButton.addEventListener('click', () => {
+            Array.from(accordionChildren).forEach(element => element.classList.add('hidden'));
+            Array.from(accordionIcons).forEach(element => element.textContent = '▶');
+        });
+    }
+    const showAllButton = document.getElementById("accordion_show_all");
+    if (showAllButton) {
+        showAllButton.addEventListener('click', () => {
+            Array.from(accordionChildren).forEach(element => element.classList.remove('hidden'));
+            Array.from(accordionIcons).forEach(element => element.textContent = '▼');
+        });
+    }
 });
