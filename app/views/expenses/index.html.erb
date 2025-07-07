@@ -15,29 +15,7 @@
     </thead>
     <tbody class="bg-white divide-y divide-gray-200" id="expenses">
       <% @expenses.each do |expense| %>
-        <tr class="hover:bg-gray-100">
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <%= expense.date&.strftime("%b %d, %Y") %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-            $<%= link_to number_with_precision(expense.amount, precision: 2), edit_expense_path(expense) %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                   <%= expense.category.name %>
-                 </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            <%= expense.description.present? ? expense.description : "-" %>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            <div class="flex space-x-2">
-              <%= link_to "Edit", edit_expense_path(expense), class: "text-indigo-600 hover:text-indigo-900" %>
-              <%= button_to "Delete", expense_path(expense), method: :delete, class: "text-red-600 hover:text-red-900 bg-transparent border-none cursor-pointer", data: { confirm: "Are you sure you
- want to delete this expense?" } %>
-            </div>
-          </td>
-        </tr>
+        <%= render expense %>
       <% end %>
     </tbody>
   </table>

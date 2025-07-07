@@ -10,13 +10,21 @@ default: &default
   timeout: 5000
 
 development:
-  <<: *default
-  adapter: postgresql
-  database: jayandra
-  host: localhost
-  username: postgres
-  password:
-  port: 5432
+  primary: &development_primary
+    <<: *default
+    adapter: postgresql
+    database: jayandra
+    host: localhost
+    username: postgres
+    password:
+    port: 5432
+  cache:
+    <<: *development_primary
+  queue:
+    <<: *development_primary
+  cable:
+    <<: *development_primary
+
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -24,7 +32,7 @@ development:
 test:
   <<: *default
   database: storage/test.sqlite3
-
+  
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.
