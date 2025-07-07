@@ -26,6 +26,17 @@ class ExpensesController < ApplicationController
 
     respond_to do |format|
       if @expense.save
+        ExpensesChannel.broadcast_to(
+          Current.user,
+          {
+            action: "expense_created",
+            expense: render_to_string(
+              partial: "expenses/expense",
+              locals: { expense: @expense },
+              formats: [ :html ]
+            )
+          }
+        )
         format.html { redirect_to expenses_path, notice: "Expense was successfully created." }
         format.json { render :show, status: :created, location: @expense }
       else
