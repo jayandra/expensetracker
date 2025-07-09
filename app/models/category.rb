@@ -9,6 +9,7 @@ class Category < ApplicationRecord
   validate :no_circular_dependency
 
   scope :roots, -> { where(parent_id: nil) }
+  default_scope { order(:position) }
 
   def self.seed_category_for_new_user(user)
     grocery = user.categories.create!(name: "Grocery")

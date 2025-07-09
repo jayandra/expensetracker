@@ -2,7 +2,12 @@ Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
   resources :expenses
-  resources :categories
+  resources :categories do
+    collection do
+      post "update_position" => "categories#update_position"
+    end
+  end
+
   resources :users
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

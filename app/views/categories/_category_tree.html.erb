@@ -1,17 +1,24 @@
 <div class="category-tree bg-white shadow rounded">
   <div class="p-4">
-      <ul class="space-y-2">
-        <% categories.each do |category| %>
-          <li class="category-item">
-            <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded border-l-4 border-indigo-500">
-              <% if category.children.any? %>
-                 <span class="font-medium cursor-pointer flex items-center accordion_parent" id="accordion_parent_<%= category.id %>">
-                   <span id="accordion_toggle_icon_<%= category.id %>" class="accordion_toggle_icon mr-2 inline-block transition-transform">▶</span>
-                   <%= category.name %>
-                 </span>
-              <% else %>
-                <span class="font-medium"><%= category.name %></span>
-              <% end %>
+      <ul class="space-y-2" id="sortable_categories" data-controller="sortable" data-sortable-url-value="<%= update_position_categories_path %>">
+        <% categories.each_with_index do |category, index| %>
+          <li class="category-item" data-id="<%= category.id %>" data-position="<%= parent_index+index %>" >
+            <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
+              <!-- Left section: SVG + Arrow (if any) + Category Name -->
+              <div class="flex space-x-1">
+                <span class="category-drag-icon"></span>
+
+                <% if category.children.any? %>
+                  <span class="font-medium cursor-pointer flex items-center accordion_parent" id="accordion_parent_<%= category.id %>">
+                    <span id="accordion_toggle_icon_<%= category.id %>" class="accordion_toggle_icon mr-1 inline-block transition-transform">▶</span>
+                    <%= category.name %>
+                  </span>
+                <% else %>
+                  <span class="font-medium"><%= category.name %></span>
+                <% end %>
+              </div>
+
+              <!-- Right section: Edit and Delete buttons -->
               <div class="flex space-x-2">
                 <%= link_to "Edit", edit_category_path(category), class: "text-indigo-600 hover:text-indigo-800" %>
                 <%= button_to "Delete", category_path(category), method: :delete, class: "text-red-600 hover:text-red-800 bg-transparent border-0 cursor-pointer", data: { confirm: "Are you sure you want
@@ -21,7 +28,7 @@
 
             <% if category.children.any? %>
               <div class="ml-6 mt-2 pl-2 border-gray-200 accordion_children hidden" id="accordion_children_<%= category.id %>">
-                <%= render partial: 'category_tree', locals: { categories: category.children } %>
+                <%= render partial: 'category_tree', locals: { categories: category.children, parent_index: (index + 1)*10 } %>
               </div>
             <% end %>
           </li>

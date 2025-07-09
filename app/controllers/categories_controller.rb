@@ -58,6 +58,18 @@ class CategoriesController < ApplicationController
     end
   end
 
+  # POST /update_position
+  def update_position
+    if Category.find(update_position_params[:ids]).pluck(:user_id).uniq == [ Current.user.id ]
+      new_order = update_position_params[:ids].zip(update_position_params[:positions]).reduce([]) { |h, a| h << { id: a.first, position: a.last } }
+      Category.upsert_all(new_order, unique_by: :id)
+
+      head :ok
+    else
+      head :bad_request
+    end
+  end
+
   private
     def scoped_categories
       @user_categories = Current.user.categories
@@ -74,5 +86,9 @@ class CategoriesController < ApplicationController
     # Only allow a list of trusted parameters through.
     def category_params
       params.expect(category: [ :name, :parent_id ])
+    end
+
+    def update_position_params
+      params.expect(categories: [ ids: [], positions: [] ])
     end
 end

@@ -9,7 +9,7 @@
     <span class="pl-5 pt-1 text-gray-700 underline hover:no-underline" id="accordion_hide_all">hide-all</span>
   </div>
 
-  <%= render partial: 'category_tree', locals: { categories: @root_categories } %>
+  <%= render partial: 'category_tree', locals: { categories: @root_categories, parent_index: 1 } %>
 </div>
 
 
