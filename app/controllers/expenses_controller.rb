@@ -26,8 +26,8 @@ class ExpensesController < ApplicationController
 
     respond_to do |format|
       if @expense.save
-        ExpensesChannel.broadcast_to(
-          Current.user,
+        ActionCable.server.broadcast(
+          ExpensesChannel.broadcasting_for("expenses:user:#{Current.user.email_address}"),
           {
             action: "expense_created",
             expense: render_to_string(

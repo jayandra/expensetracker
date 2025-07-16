@@ -1,6 +1,6 @@
 class ExpensesChannel < ApplicationCable::Channel
   def subscribed
-    stream_for current_user
+    stream_for ExpensesChannel.broadcasting_for("expenses:user:#{current_user.email_address}")
   end
 
   def unsubscribed
