@@ -4,7 +4,7 @@ class CategoriesController < ApplicationController
 
   # GET /categories or /categories.json
   def index
-    @root_categories = scoped_categories.roots
+    @categories = scoped_categories
   end
 
   # GET /categories/1 or /categories/1.json
