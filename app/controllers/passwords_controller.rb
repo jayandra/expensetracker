@@ -14,7 +14,10 @@ class PasswordsController < ApplicationController
       end
     end
 
-    redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)."
+    respond_to do |format|
+      format.json { head :ok }
+      format.html { redirect_to new_session_path, notice: "Password reset instructions sent (if user with that email address exists)." }
+    end
   end
 
   def edit
@@ -22,9 +25,15 @@ class PasswordsController < ApplicationController
 
   def update
     if @user.update(params.permit(:password, :password_confirmation))
-      redirect_to new_session_path, notice: "Password has been reset."
+      respond_to do |format|
+        format.json { render json: { message: "Password has been reset." } }
+        format.html { redirect_to new_session_path, notice: "Password has been reset." }
+      end
     else
-      redirect_to edit_password_path(params[:token]), alert: "Passwords did not match."
+      respond_to do |format|
+        format.json { render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity }
+        format.html { render :edit, status: :unprocessable_entity }
+      end
     end
   end
 

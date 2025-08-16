@@ -6,17 +6,24 @@ class UsersController < ApplicationController
 
   def create
     @user = User.new(user_params)
-    if @user.save
-      start_new_session_for @user
-      Category.seed_category_for_new_user(@user)
-      if ENV["DISABLE_ASYNC_JOBS"] == true || Rails.application.credentials.disable_async_jobs == true
-        WelcomeMailer.welcome_email(user).deliver_now
+
+    respond_to do |format|
+      if @user.save
+        start_new_session_for @user
+        Category.seed_category_for_new_user(@user)
+
+        if ENV["DISABLE_ASYNC_JOBS"] == "true" || Rails.application.credentials.disable_async_jobs == true
+          WelcomeMailer.welcome_email(@user).deliver_now
+        else
+          SendEmailsJob.perform_later(@user, :signup)
+        end
+
+        format.json { render json: { user: @user, message: "Account created successfully!" }, status: :created }
+        format.html { redirect_to categories_path, notice: "Welcome to ExpenseTracker!" }
       else
-        SendEmailsJob.perform_later(@user, :signup)
+        format.json { render json: { errors: @user.errors.full_messages }, status: :unprocessable_entity }
+        format.html { render :new, status: :unprocessable_entity }
       end
-      redirect_to categories_path, notice: "Welcome to ExpenseTracker!"
-    else
-      render :new, status: :unprocessable_entity
     end
   end
 
