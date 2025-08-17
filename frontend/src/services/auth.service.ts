@@ -30,7 +30,7 @@ export const logout = async () => {
 };
 
 export const checkSession = async () => {
-  const response = await axios.get(`/sessions/check`);
+  const response = await axios.get(`/session`);
   return response.data;
 };
 

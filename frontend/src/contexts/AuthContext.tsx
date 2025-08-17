@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { emitError } from '../services/errorBus';
 import { 
   login as loginService, 
-  logout as logoutService
+  logout as logoutService,
+  checkSession as checkSessionService
 } from '../services/auth.service';
 
 interface User {
@@ -32,11 +33,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for existing session on initial load
     const checkSession = async () => {
       try {
-        // TODO: Implement session check with your backend
-        // const userData = await checkSession();
-        // setUser(userData);
-      } catch (error) {
-        console.error('Session check failed:', error);
+        const data = await checkSessionService();
+        if (data?.user) {
+          const u = data.user as any;
+          setUser({ id: u.id, email: u.email_address });
+        }
+      } catch (error: any) {
+        // Silently ignore 401 (unauthenticated) during initial probe
+        if (error?.status !== 401) {
+          console.error('Session check failed:', error);
+        }
       } finally {
         setLoading(false);
       }
@@ -54,7 +60,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emitError({ message: 'Invalid response from server' });
         return;
       }
-      setUser(user);
+      setUser({ id: user.id, email: user.email_address });
       navigate('/dashboard');
     } finally {
       setLoading(false);

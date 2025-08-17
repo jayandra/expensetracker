@@ -1,9 +1,18 @@
 class SessionsController < ApplicationController
   skip_before_action :verify_authenticity_token, if: -> { request.format.json? }
-  allow_unauthenticated_access only: %i[new create]
+  allow_unauthenticated_access only: %i[new create show]
   rate_limit to: 10, within: 3.minutes, only: :create, with: -> { handle_rate_limit }
 
   def new
+  end
+
+  def show
+    # Probe current session for SPA
+    if authenticated?
+      render json: { user: Current.user.as_json(only: [ :id, :email_address ]), logged_in: true }
+    else
+      render json: { logged_in: false }, status: :unauthorized
+    end
   end
 
   def create
