@@ -65,3 +65,13 @@ button:focus-visible {
     color: #747bff;
   }
 }
+
+/* Reusable input style for text/password/email fields */
+.form-input {
+  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder:text-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm;
+}
+
+/* Reusable button style for form submit/cancel buttons */
+.form-button {
+  @apply group relative w-full flex justify-center py-2 px-4 mt-4 border border-transparent text-sm font-medium rounded-md text-white bg-slate-600 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed;
+}
