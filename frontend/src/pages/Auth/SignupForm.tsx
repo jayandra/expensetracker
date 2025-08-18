@@ -61,7 +61,7 @@ const SignupForm = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="form-input rounded-t-md"
+                className="form-input form-input-primary rounded-t-md"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -77,7 +77,7 @@ const SignupForm = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="form-input"
+                className="form-input form-input-primary"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -93,7 +93,7 @@ const SignupForm = () => {
                 type="password"
                 autoComplete="new-password"
                 required
-                className="form-input rounded-b-md"
+                className="form-input form-input-primary rounded-b-md"
                 placeholder="Confirm Password"
                 value={passwordConfirmation}
                 onChange={(e) => setPasswordConfirmation(e.target.value)}
@@ -105,7 +105,7 @@ const SignupForm = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="form-button"
+              className="form-button form-button-primary"
             >
               {isLoading ? 'Creating account...' : 'Sign up'}
             </button>

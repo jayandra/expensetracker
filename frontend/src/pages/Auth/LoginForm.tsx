@@ -42,7 +42,7 @@ const LoginForm = () => {
                 type="email"
                 autoComplete="email"
                 required
-                className="form-input rounded-t-md"
+                className="form-input form-input-primary rounded-t-md"
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -58,7 +58,7 @@ const LoginForm = () => {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="form-input rounded-b-md"
+                className="form-input form-input-primary rounded-b-md"
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -81,7 +81,7 @@ const LoginForm = () => {
             <button
               type="submit"
               disabled={loading}
-              className="form-button"
+              className="form-button form-button-primary"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>

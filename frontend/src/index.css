@@ -1,29 +1,6 @@
 @import "tailwindcss";
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
+/* Base styles */
 body {
   margin: 0;
   display: flex;
@@ -32,46 +9,23 @@ body {
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #2563eb;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-}
-
-/* Reusable input style for text/password/email fields */
+/* Form elements */
+/* Base input - no colors */
 .form-input {
-  @apply appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder:text-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm;
+  @apply appearance-none relative block w-full px-3 py-2 border border-neutral-300 focus:outline-none focus:z-10 sm:text-sm;
 }
 
-/* Reusable button style for form submit/cancel buttons */
+/* Primary input - adds colors */
+.form-input-primary {
+  @apply placeholder:text-neutral-500 text-neutral-900 focus:ring-primary-500 focus:border-primary-500;
+}
+
+/* Base button - no colors */
 .form-button {
-  @apply relative w-full flex justify-center py-2 px-4 mt-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply relative w-full flex justify-center py-2 px-4 mt-4 border text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* Primary button - adds colors */
+.form-button-primary {
+  @apply border-transparent text-white bg-primary-600 hover:bg-primary-700 focus:ring-primary-500;
 }

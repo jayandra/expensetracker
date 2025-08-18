@@ -13,8 +13,6 @@ const ForgotPasswordForm = () => {
     setMessage('');
     
     if (!email) {
-      // Optional: inline validation without using global banner
-      // setMessage('Please enter your email address');
       return;
     }
 
@@ -31,45 +29,45 @@ const ForgotPasswordForm = () => {
   return (
     <AuthLayout
       title="Reset your password"
-      subtitle={"Enter your email address and we'll send you a link to reset your password."}
       footer={(
-        <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-          Back to login
-        </Link>
+        <>
+          <span className="text-gray-600">Remember your password? </span>
+          <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            Back to login
+          </Link>
+        </>
       )}
     >
-      {/* Errors are shown globally via GlobalErrorBanner */}
-
       {message ? (
-        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4" role="alert">
+        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
           <p>{message}</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="form-input rounded-md"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="email-address" className="sr-only">
+                Email address
+              </label>
+              <input
+                id="email-address"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                className="form-input form-input-primary rounded-md"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
+          </div>
 
           <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="form-button"
+              className="form-button form-button-primary"
             >
               {isLoading ? 'Sending...' : 'Send reset instructions'}
             </button>

@@ -114,7 +114,7 @@ const ResetPasswordForm = () => {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                className="form-input rounded-t-md"
+                className="form-input form-input-primary rounded-t-md"
                 placeholder="New password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -131,7 +131,7 @@ const ResetPasswordForm = () => {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                className="form-input rounded-b-md"
+                className="form-input form-input-primary rounded-b-md"
                 placeholder="Confirm new password"
                 value={passwordConfirmation}
                 onChange={(e) => setPasswordConfirmation(e.target.value)}
@@ -143,7 +143,7 @@ const ResetPasswordForm = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="form-button"
+              className="form-button form-button-primary"
             >
               {isLoading ? 'Resetting...' : 'Reset Password'}
             </button>
