@@ -1,9 +1,53 @@
 
-import colors from '../config/colors';
+import { useEffect, useState } from 'react';
 
-const colorPalette = colors;
+interface ColorShades {
+  [key: string]: string;
+}
+
+interface ColorPalette {
+  [key: string]: ColorShades;
+}
+
+const extractColorsFromCSS = (): ColorPalette => {
+  const colorPalette: ColorPalette = {};
+  const style = getComputedStyle(document.documentElement);
+  
+  // Define color groups and their shades based on your CSS variables
+  const colorGroups = ['primary', 'secondary', 'success', 'warning', 'error', 'neutral'];
+  const shades = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900'];
+
+  colorGroups.forEach(group => {
+    colorPalette[group] = {};
+    shades.forEach(shade => {
+      const cssVar = `--color-${group}-${shade}`;
+      const value = style.getPropertyValue(cssVar).trim();
+      if (value) {
+        colorPalette[group][shade] = `var(${cssVar})`;
+      }
+    });
+  });
+console.log(colorPalette)
+  return colorPalette;
+};
+
+const useColorPalette = (): ColorPalette => {
+  const [colors, setColors] = useState<ColorPalette>(() => extractColorsFromCSS());
+
+  useEffect(() => {
+    // In case CSS variables are loaded after component mounts
+    const timer = setTimeout(() => {
+      setColors(extractColorsFromCSS());
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return colors;
+};
 
 const ColorPalette = () => {
+  const colorPalette = useColorPalette();
   const colorGroups = Object.entries(colorPalette).map(([name, colors]) => ({
     name: name.charAt(0).toUpperCase() + name.slice(1),
     colors,
