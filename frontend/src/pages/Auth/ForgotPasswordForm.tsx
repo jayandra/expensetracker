@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { requestPasswordReset as requestPasswordResetService } from '../../services/auth.service';
-import AuthLayout from '../../components/Auth/AuthLayout';
+import FormContainer from '../../components/Form/FormContainer';
+import FormInput from '../../components/Form/FormInput';
+import Button from '../../components/Form/Button';
 
 const ForgotPasswordForm = () => {
   const [email, setEmail] = useState('');
@@ -27,54 +29,49 @@ const ForgotPasswordForm = () => {
   };
 
   return (
-    <AuthLayout
+    <FormContainer
       title="Reset your password"
-      footer={(
+      subtitle="Enter your email address and we'll send you a link to reset your password."
+      footer={
         <>
-          <span className="text-gray-600">Remember your password? </span>
-          <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+          <span className="text-neutral-600">Remember your password? </span>
+          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500">
             Back to login
           </Link>
         </>
-      )}
+      }
     >
       {message ? (
-        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
-          <p>{message}</p>
+        <div className="bg-success-100 border-l-4 border-success-500 text-success-700 p-4 mb-6 rounded" role="alert">
+          <p className="text-sm">{message}</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="form-input form-input-primary rounded-md"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <FormInput
+              label="Email address"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
 
           <div>
-            <button
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="form-button form-button-primary"
+              isLoading={isLoading}
+              className="w-full justify-center"
             >
-              {isLoading ? 'Sending...' : 'Send reset instructions'}
-            </button>
+              Send reset instructions
+            </Button>
           </div>
         </form>
       )}
-    </AuthLayout>
+    </FormContainer>
   );
 };
 

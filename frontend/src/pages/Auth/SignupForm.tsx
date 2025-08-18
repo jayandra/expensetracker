@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { emitError } from '../../services/errorBus';
 import { signup as signupService } from '../../services/auth.service';
-import AuthLayout from '../../components/Auth/AuthLayout';
+import FormContainer from '../../components/Form/FormContainer';
+import FormInput from '../../components/Form/FormInput';
+import Button from '../../components/Form/Button';
 
 const SignupForm = () => {
   const [email, setEmail] = useState('');
@@ -34,84 +36,67 @@ const SignupForm = () => {
   };
 
   return (
-    <AuthLayout
+    <FormContainer
       title="Create a new account"
-      footer={(
+      footer={
         <>
-          <span className="text-gray-600">Already have an account? </span>
+          <span className="text-neutral-600">Already have an account? </span>
           <Link
             to="/login"
-            className="font-medium text-indigo-600 hover:text-indigo-500"
+            className="font-medium text-primary-600 hover:text-primary-500"
           >
             Sign in
           </Link>
         </>
-      )}
+      }
     >
-      {/* Errors are shown globally via GlobalErrorBanner */}
-      <form onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="form-input form-input-primary rounded-t-md"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="form-input form-input-primary"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password-confirm" className="sr-only">
-                Confirm Password
-              </label>
-              <input
-                id="password-confirm"
-                name="password_confirmation"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="form-input form-input-primary rounded-b-md"
-                placeholder="Confirm Password"
-                value={passwordConfirmation}
-                onChange={(e) => setPasswordConfirmation(e.target.value)}
-              />
-            </div>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <FormInput
+            label="Email address"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          
+          <FormInput
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          
+          <FormInput
+            label="Confirm Password"
+            name="password_confirmation"
+            type="password"
+            autoComplete="new-password"
+            required
+            placeholder="Confirm Password"
+            value={passwordConfirmation}
+            onChange={(e) => setPasswordConfirmation(e.target.value)}
+          />
+        </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="form-button form-button-primary"
-            >
-              {isLoading ? 'Creating account...' : 'Sign up'}
-            </button>
-          </div>
-        </form>
-    </AuthLayout>
+        <div>
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            className="w-full justify-center"
+          >
+            Sign up
+          </Button>
+        </div>
+      </form>
+    </FormContainer>
   );
 };
 

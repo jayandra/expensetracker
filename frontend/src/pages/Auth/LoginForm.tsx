@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import AuthLayout from '../../components/Auth/AuthLayout';
+import FormContainer from '../../components/Form/FormContainer';
+import FormInput from '../../components/Form/FormInput';
+import Button from '../../components/Form/Button';
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -14,80 +16,69 @@ const LoginForm = () => {
   }
 
   return (
-    <AuthLayout
+    <FormContainer
       title="Sign in to your account"
-      footer={(
+      footer={
         <>
-          <span className="text-gray-600">Don't have an account? </span>
+          <span className="text-neutral-600">Don't have an account? </span>
           <Link
             to="/signup"
-            className="font-medium text-indigo-600 hover:text-indigo-500"
+            className="font-medium text-primary-600 hover:text-primary-500"
           >
             Sign up
           </Link>
         </>
-      )}
+      }
     >
-      {/* Errors are shown globally via GlobalErrorBanner */}
-      <form onSubmit={handleSubmit}>
-          <input type="hidden" name="remember" value="true" />
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email-address" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email-address"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="form-input form-input-primary rounded-t-md"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                className="form-input form-input-primary rounded-b-md"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-          </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <input type="hidden" name="remember" value="true" />
+        
+        <div className="space-y-4">
+          <FormInput
+            label="Email address"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          
+          <FormInput
+            label="Password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
 
-          <div className="flex items-center justify-between">
-            <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Forgot your password?
-              </Link>
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="form-button form-button-primary"
+        <div className="flex items-center justify-end">
+          <div className="text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-primary-600 hover:text-primary-500"
             >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+              Forgot your password?
+            </Link>
           </div>
-        </form>
-    </AuthLayout>
+        </div>
+
+        <div>
+          <Button
+            type="submit"
+            isLoading={loading}
+            className="w-full justify-center"
+          >
+            Sign in
+          </Button>
+        </div>
+      </form>
+    </FormContainer>
   );
 };
 

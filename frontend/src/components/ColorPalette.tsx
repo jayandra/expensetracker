@@ -7,7 +7,7 @@ const ColorPalette = () => {
   const colorGroups = Object.entries(colorPalette).map(([name, colors]) => ({
     name: name.charAt(0).toUpperCase() + name.slice(1),
     colors,
-    textColor: name === 'warning' ? 'text-gray-900' : 'text-white',
+    textColor: name === 'warning' ? 'text-neutral-900' : 'text-white',
   }));
 
   return (
