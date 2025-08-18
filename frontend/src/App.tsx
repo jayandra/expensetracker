@@ -7,6 +7,7 @@ import SignupForm from './pages/Auth/SignupForm';
 import ForgotPasswordForm from './pages/Auth/ForgotPasswordForm';
 import ResetPasswordForm from './pages/Auth/ResetPasswordForm';
 import './App.css';
+import ColorPalette from './components/ColorPalette';
 
 // Main App component with routing
 function App() {
@@ -15,6 +16,7 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
+          <Route path="/colors" element={<ColorPalette/>} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<SignupForm />} />
           <Route path="/forgot-password" element={<ForgotPasswordForm />} />
