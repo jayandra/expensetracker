@@ -7,7 +7,7 @@ import SignupForm from './pages/Auth/SignupForm';
 import ForgotPasswordForm from './pages/Auth/ForgotPasswordForm';
 import ResetPasswordForm from './pages/Auth/ResetPasswordForm';
 import './App.css';
-import ColorPalette from './components/ColorPalette';
+import ColorPalette from './pages/ColorPalette';
 
 // Main App component with routing
 function App() {
