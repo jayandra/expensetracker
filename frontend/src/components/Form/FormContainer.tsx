@@ -16,7 +16,7 @@ const FormContainer = ({
   className = '',
 }: FormContainerProps) => {
   return (
-    <div className="w-full">
+    <div className="w-full p-4">
       <div className={`w-full sm:w-80 md:w-96 lg:w-[32rem] xl:w-[36rem] space-y-8 ${className}`}>
         <div>
           <h2 className="text-center text-3xl font-extrabold text-neutral-900">
