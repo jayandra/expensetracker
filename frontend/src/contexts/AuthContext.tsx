@@ -2,11 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { emitError } from '../services/errorBus';
-import { 
-  login as loginService, 
-  logout as logoutService,
-  checkSession as checkSessionService
-} from '../services/auth.service';
+import { AuthService } from '../services/auth/auth.service';
 
 interface User {
   id: number;
@@ -33,10 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for existing session on initial load
     const checkSession = async () => {
       try {
-        const data = await checkSessionService();
-        if (data?.user) {
-          const u = data.user as any;
-          setUser({ id: u.id, email: u.email_address });
+        const user = await AuthService.checkSession();
+        if (user) {
+          setUser({ id: user.id, email: user.email });
         }
       } catch (error: any) {
         // Silently ignore 401 (unauthenticated) during initial probe
@@ -54,13 +49,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { user } = await loginService(email, password);
+      const { user } = await AuthService.login({ email_address: email, password });
       if (!user) {
         // Surface as a global error to keep components free of try/catch
         emitError({ message: 'Invalid response from server' });
         return;
       }
-      setUser({ id: user.id, email: user.email_address });
+      setUser({ id: user.id, email: user.email });
       navigate('/dashboard');
     } finally {
       setLoading(false);
@@ -72,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     setLoading(true);
     try {
-      await logoutService();
+      await AuthService.logout();
       setUser(null);
       navigate('/login');
     } finally {

@@ -1,19 +1,28 @@
 import axios from 'axios';
-import { emitError } from './errorBus';
+import { emitError } from '../../services/errorBus';
 
-// Central Axios configuration
-const API_URL = import.meta.env.VITE_API_URL;
+export const client = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  withCredentials: true
+});
 
-axios.defaults.baseURL = API_URL;
-axios.defaults.withCredentials = true;
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-axios.defaults.headers.common['Accept'] = 'application/json';
+// Request interceptor
+client.interceptors.request.use(
+  (config) => {
+    // You can add auth token here if needed
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-// Optional: set a reasonable timeout
-// axios.defaults.timeout = 20000;
-
-// Response error handling interceptor
-axios.interceptors.response.use(
+// Response interceptor
+client.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
@@ -32,4 +41,4 @@ axios.interceptors.response.use(
   }
 );
 
-export default axios;
+export default client;
