@@ -53,14 +53,14 @@ const Dashboard = () => {
     { id: 2, name: 'Salary', amount: 2500.00, category: 'Income', date: 'Yesterday', type: 'income' },
     { id: 3, name: 'Restaurant', amount: 45.50, category: 'Food', date: 'Yesterday', type: 'expense' },
     { id: 4, name: 'Shopping', amount: 89.99, category: 'Shopping', date: '2 days ago', type: 'expense' },
-    { id: 1, name: 'Grocery Store', amount: 120.00, category: 'Grocery', date: 'Today', type: 'expense' },
-    { id: 2, name: 'Salary', amount: 2500.00, category: 'Income', date: 'Yesterday', type: 'income' },
-    { id: 3, name: 'Restaurant', amount: 45.50, category: 'Food', date: 'Yesterday', type: 'expense' },
-    { id: 4, name: 'Shopping', amount: 89.99, category: 'Shopping', date: '2 days ago', type: 'expense' },
-    { id: 1, name: 'Grocery Store', amount: 120.00, category: 'Grocery', date: 'Today', type: 'expense' },
-    { id: 2, name: 'Salary', amount: 2500.00, category: 'Income', date: 'Yesterday', type: 'income' },
-    { id: 3, name: 'Restaurant', amount: 45.50, category: 'Food', date: 'Yesterday', type: 'expense' },
-    { id: 4, name: 'Shopping', amount: 89.99, category: 'Shopping', date: '2 days ago', type: 'expense' },
+    { id: 5, name: 'Electric Bill', amount: 85.00, category: 'Utilities', date: '3 days ago', type: 'expense' },
+    { id: 6, name: 'Freelance Work', amount: 500.00, category: 'Income', date: '4 days ago', type: 'income' },
+    { id: 7, name: 'Coffee Shop', amount: 12.50, category: 'Food', date: '4 days ago', type: 'expense' },
+    { id: 8, name: 'Bookstore', amount: 32.99, category: 'Shopping', date: '5 days ago', type: 'expense' },
+    { id: 9, name: 'Gas Station', amount: 45.75, category: 'Transportation', date: '5 days ago', type: 'expense' },
+    { id: 10, name: 'Bonus', amount: 200.00, category: 'Income', date: '1 week ago', type: 'income' },
+    { id: 11, name: 'Lunch', amount: 18.75, category: 'Food', date: '1 week ago', type: 'expense' },
+    { id: 12, name: 'Clothing', amount: 75.50, category: 'Shopping', date: '1 week ago', type: 'expense' },
   ];
 
   const navItems: NavItem[] = [

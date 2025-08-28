@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { emitError } from '../../services/errorBus';
-import { signup as signupService } from '../../services/auth.service';
+import { AuthService } from '../../services/auth/auth.service';
 import FormContainer from '../../components/Form/FormContainer';
 import FormInput from '../../components/Form/FormInput';
 import Button from '../../components/Form/Button';
@@ -26,7 +26,7 @@ const SignupForm = () => {
 
     try {
       setIsLoading(true);
-      await signupService(email, password, passwordConfirmation);
+      await AuthService.signup({ email, password, password_confirmation: passwordConfirmation });
       // After signup, log the user in to establish session/context
       await login(email, password);
       navigate('/dashboard');

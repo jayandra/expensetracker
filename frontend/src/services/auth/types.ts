@@ -12,7 +12,6 @@ export interface LoginCredentials {
 }
 
 export interface SignupData extends LoginCredentials {
-  name: string;
   password_confirmation: string;
 }
 

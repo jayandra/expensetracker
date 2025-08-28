@@ -1,12 +1,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import SignupForm from './SignupForm';
-import * as authSvc from '../../services/auth.service';
+import { AuthService } from '../../services/auth/auth.service';
 import * as AuthCtx from '../../contexts/AuthContext';
 import { MemoryRouter } from 'react-router-dom';
 
-vi.mock('../../services/auth.service', () => ({
-  signup: vi.fn().mockResolvedValue({}),
+vi.mock('../../services/auth/auth.service', () => ({
+  AuthService: {
+    signup: vi.fn().mockResolvedValue({}),
+  },
 }));
 
 describe('SignupForm', () => {
@@ -31,7 +33,7 @@ describe('SignupForm', () => {
     fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'secret' } });
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
-    await waitFor(() => expect(authSvc.signup).toHaveBeenCalled());
+    await waitFor(() => expect(AuthService.signup).toHaveBeenCalled());
     await waitFor(() => expect(login).toHaveBeenCalledWith('a@b.com', 'secret'));
   });
 });

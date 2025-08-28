@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { requestPasswordReset as requestPasswordResetService } from '../../services/auth.service';
+import { AuthService } from '../../services/auth/auth.service';
 import FormContainer from '../../components/Form/FormContainer';
 import FormInput from '../../components/Form/FormInput';
 import Button from '../../components/Form/Button';
@@ -21,7 +21,7 @@ const ForgotPasswordForm = () => {
     setIsLoading(true);
 
     try {
-      await requestPasswordResetService(email);
+      await AuthService.requestPasswordReset(email);
       setMessage('If an account exists with this email, you will receive password reset instructions.');
     } finally {
       setIsLoading(false);

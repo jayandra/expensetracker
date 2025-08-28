@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { resetPassword as resetPasswordService } from '../../services/auth.service';
+import { AuthService } from '../../services/auth/auth.service';
 import FormContainer from '../../components/Form/FormContainer';
 import FormInput from '../../components/Form/FormInput';
 import Button from '../../components/Form/Button';
@@ -50,7 +50,7 @@ const ResetPasswordForm = () => {
     setIsLoading(true);
 
     try {
-      await resetPasswordService(token, password, passwordConfirmation);
+      await AuthService.resetPassword({ token, password, password_confirmation: passwordConfirmation });
 
       setMessage('Your password has been reset successfully. Redirecting to login...');
       setTimeout(() => {
