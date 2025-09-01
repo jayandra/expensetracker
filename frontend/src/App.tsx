@@ -12,8 +12,8 @@ import ColorPalette from './pages/ColorPalette';
 // Main App component with routing
 function App() {
   return (
-    <Router>
-      <AuthProvider>
+      <Router>
+        <AuthProvider>
         <Routes>
           {/* Public routes */}
           <Route path="/colors" element={<ColorPalette/>} />
@@ -46,8 +46,8 @@ function App() {
           */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </AuthProvider>
-    </Router>
+        </AuthProvider>
+      </Router>
   );
 }
 

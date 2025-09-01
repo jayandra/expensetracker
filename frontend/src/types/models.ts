@@ -1,0 +1,5 @@
+import { z } from 'zod';
+import { categorySchema, expenseSchema } from '../db/schema';
+
+export type Category = z.infer<typeof categorySchema>;
+export type Expense = z.infer<typeof expenseSchema>;

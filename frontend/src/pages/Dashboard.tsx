@@ -1,34 +1,15 @@
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useState, useMemo } from 'react';
+import { useLiveQuery } from '@tanstack/react-db';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
-import FastfoodIcon from '@mui/icons-material/Fastfood';
-import LocalGroceryStoreIcon from '@mui/icons-material/LocalGroceryStore';
-import LocalMallIcon from '@mui/icons-material/LocalMall';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
 import AddIcon from '@mui/icons-material/Add';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import SettingsIcon from '@mui/icons-material/Settings';
-
 import type { ReactNode } from 'react';
-
-interface ExpenseItem {
-  id: number;
-  category: string;
-  amount: number;
-  icon: ReactNode;
-  color: string;
-}
-
-interface Transaction {
-  id: number;
-  name: string;
-  amount: number;
-  category: string;
-  date: string;
-  type: 'income' | 'expense';
-}
+import type { Expense } from '../db';
 
 interface NavItem {
   id: string;
@@ -37,31 +18,84 @@ interface NavItem {
 }
 
 const Dashboard = () => {
-  useAuth(); // User data can be used for future features
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
+  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('week');
 
-  const expenseSummary: ExpenseItem[] = [
-    { id: 1, category: 'Shopping', amount: 1200, icon: <ShoppingCartIcon />, color: 'primary' },
-    { id: 2, category: 'Food', amount: 850, icon: <FastfoodIcon />, color: 'success' },
-    { id: 3, category: 'Grocery', amount: 450, icon: <LocalGroceryStoreIcon />, color: 'warning' },
-    { id: 4, category: 'Others', amount: 300, icon: <LocalMallIcon />, color: 'secondary' },
-  ];
+  // Calculate date range based on selected period
+  const dateRange = useMemo(() => {
+    const now = new Date();
+    
+    switch (selectedPeriod) {
+      case 'day':
+        return {
+          start: startOfDay(now),
+          end: endOfDay(now)
+        };
+      case 'week':
+        return {
+          start: startOfWeek(now, { weekStartsOn: 1 }), // Monday
+          end: endOfWeek(now, { weekStartsOn: 1 })
+        };
+      case 'month':
+        return {
+          start: startOfMonth(now),
+          end: endOfMonth(now)
+        };
+      default:
+        return {
+          start: startOfMonth(now),
+          end: endOfMonth(now)
+        };
+    }
+  }, [selectedPeriod]);
 
-  const recentTransactions: Transaction[] = [
-    { id: 1, name: 'Grocery Store', amount: 120.00, category: 'Grocery', date: 'Today', type: 'expense' },
-    { id: 2, name: 'Salary', amount: 2500.00, category: 'Income', date: 'Yesterday', type: 'income' },
-    { id: 3, name: 'Restaurant', amount: 45.50, category: 'Food', date: 'Yesterday', type: 'expense' },
-    { id: 4, name: 'Shopping', amount: 89.99, category: 'Shopping', date: '2 days ago', type: 'expense' },
-    { id: 5, name: 'Electric Bill', amount: 85.00, category: 'Utilities', date: '3 days ago', type: 'expense' },
-    { id: 6, name: 'Freelance Work', amount: 500.00, category: 'Income', date: '4 days ago', type: 'income' },
-    { id: 7, name: 'Coffee Shop', amount: 12.50, category: 'Food', date: '4 days ago', type: 'expense' },
-    { id: 8, name: 'Bookstore', amount: 32.99, category: 'Shopping', date: '5 days ago', type: 'expense' },
-    { id: 9, name: 'Gas Station', amount: 45.75, category: 'Transportation', date: '5 days ago', type: 'expense' },
-    { id: 10, name: 'Bonus', amount: 200.00, category: 'Income', date: '1 week ago', type: 'income' },
-    { id: 11, name: 'Lunch', amount: 18.75, category: 'Food', date: '1 week ago', type: 'expense' },
-    { id: 12, name: 'Clothing', amount: 75.50, category: 'Shopping', date: '1 week ago', type: 'expense' },
-  ];
+  // Live query for expenses within the selected date range
+  const { 
+    data: filteredExpenses = [], 
+    isLoading, 
+    error 
+  } = useLiveQuery((q: any) =>
+    q
+      .from({ expenses: 'expenses' })
+      .where(({ expenses }: { expenses: { date: string } }) => 
+        q.and(
+          q.gte(expenses.date, dateRange.start.toISOString()),
+          q.lte(expenses.date, dateRange.end.toISOString())
+        )
+      )
+      .select()
+  , {
+    queryKey: ['expenses', selectedPeriod, dateRange.start.toISOString()],
+  });
+
+  // Calculate expense summary by category
+  interface ExpenseSummaryItem {
+    category_id: number;
+    total: number;
+  }
+  
+  const expenseSummary = useMemo<ExpenseSummaryItem[]>(() => {
+    if (!filteredExpenses.length) return [];
+    
+    const summaryMap = filteredExpenses.reduce<Record<number, number>>((acc:Record<number, number>, expense:Expense) => {
+      const currentSum = acc[expense.category_id] || 0;
+      acc[expense.category_id] = currentSum + expense.amount;
+      return acc;
+    }, {});
+    
+    return Object.entries(summaryMap).map(([categoryId, sum]) => ({
+      category_id: Number(categoryId),
+      total: Number(sum)
+    }));
+  }, [filteredExpenses]);
+
+  const recentTransactions = useMemo(() => {
+    if (!filteredExpenses.length) return [];
+    
+    return filteredExpenses
+      .sort((a:Expense, b:Expense) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 12);
+  }, [filteredExpenses]);
 
   const navItems: NavItem[] = [
     { id: 'home', icon: <HomeIcon fontSize="large" />, label: 'Home' },
@@ -72,8 +106,18 @@ const Dashboard = () => {
   ];
 
   const getTotalExpenses = (): number => {
-    return expenseSummary.reduce((sum, item) => sum + item.amount, 0);
+    return expenseSummary.reduce((sum, item) => sum + item.total, 0);
   };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="flex items-center justify-center min-h-screen text-red-500">
+      Error loading expenses: {error instanceof Error ? error.message : 'Unknown error'}
+    </div>;
+  }
 
   return (
     <div className="relative flex flex-col min-h-screen bg-neutral-50">
@@ -145,7 +189,7 @@ const Dashboard = () => {
                   <p className="text-xs text-neutral-500">Shopping</p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-warning-50 flex items-center justify-center">
-                  <ShoppingCartIcon className="text-warning-600" />
+                  <ReceiptIcon className="text-warning-600" />
                 </div>
               </div>
             </div>
@@ -173,17 +217,12 @@ const Dashboard = () => {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {expenseSummary.map((item) => (
-                <div key={item.id} className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-2 ${
-                    item.color === 'primary' ? 'bg-primary-50 text-primary-600' :
-                    item.color === 'success' ? 'bg-success-50 text-success-600' :
-                    item.color === 'warning' ? 'bg-warning-50 text-warning-600' :
-                    'bg-secondary-50 text-secondary-600'
-                  }`}>
-                    {item.icon}
+                <div key={item.category_id} className="bg-white rounded-xl p-4 shadow-sm">
+                  <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center mb-2">
+                    <ReceiptIcon />
                   </div>
-                  <div className="text-sm text-neutral-500">{item.category}</div>
-                  <div className="font-semibold">${item.amount}</div>
+                  <div className="text-sm text-neutral-500">Category {item.category_id}</div>
+                  <div className="font-semibold">${item.total.toFixed(2)}</div>
                 </div>
               ))}
             </div>
@@ -196,7 +235,7 @@ const Dashboard = () => {
               <button className="text-xs text-primary-600">See All</button>
             </div>
             <div className="space-y-3">
-              {recentTransactions.map((transaction) => (
+              {recentTransactions.map((transaction:Expense) => (
                 <div key={transaction.id} className="flex items-center bg-white rounded-xl p-3 shadow-sm">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
                     transaction.type === 'income' ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
