@@ -1,12 +1,12 @@
 // Export database instance and schemas
-export { db, categorySchema, expenseSchema } from './schema';
+export { categorySchema, expenseSchema } from './schema';
 
 // Export collections
 export * from './collections/categories';
 export * from './collections/expenses';
 
 // Export types
-export type { Category, Expense } from '../types/models';
+export type { Category, NewCategoryInput, Expense } from '../types/models';
 
 // Transaction types
 export type TransactionMutation<T> = {

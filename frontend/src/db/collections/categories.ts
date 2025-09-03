@@ -1,34 +1,35 @@
-import { 
-  createCollection, 
-  queryCollectionOptions, 
-  type CollectionInsertInfo, 
-  type CollectionUpdateInfo, 
-  type CollectionDeleteInfo 
-} from '@tanstack/react-db';
-import { categorySchema, type Category } from '../index';
+import { createCollection } from '@tanstack/react-db';
+import { queryCollectionOptions } from '@tanstack/query-db-collection';
+import { categorySchema, type Category, type NewCategoryInput } from '../index';
 import { CategoryService } from '../../services/categories/categories.service';
+import { queryClient } from '../queryClient';
 
 export const categoriesCollection = createCollection<Category>(
   queryCollectionOptions({
-    name: 'categories',
-    schema: categorySchema,
     queryKey: ['categories'],
+    queryClient,
+    getKey: (category: Category) => category.id.toString(),
+    schema: categorySchema,
+
     queryFn: async () => {
       return await CategoryService.index();
     },
-    getKey: (category: Category) => category.id,
-    onInsert: async ({ transaction }: CollectionInsertInfo<Category>) => {
-      const { changes: newCategory } = transaction.mutations[0];
+
+    onInsert: async ({ transaction }) => {
+      const { changes } = transaction.mutations[0];
+      const newCategory = changes as NewCategoryInput;
       return await CategoryService.create(newCategory);
     },
-    onUpdate: async ({ transaction }: CollectionUpdateInfo<Category>) => {
+
+    onUpdate: async ({ transaction }) => {
       const { key: id, changes } = transaction.mutations[0];
       return await CategoryService.update(id, changes);
     },
-    onDelete: async ({ transaction }: CollectionDeleteInfo<Category>) => {
+
+    onDelete: async ({ transaction }) => {
       const { key: id } = transaction.mutations[0];
       await CategoryService.destroy(id);
-      return { success: true };
+      return { refetch: false }; // Or { refetch: true } depending on your needs
     },
   })
 );

@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useLiveQuery } from '@tanstack/react-db';
+import { and, gte, lte } from '@tanstack/db'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
-
+import { emitError } from '../services/errorBus';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
@@ -9,7 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import type { ReactNode } from 'react';
-import type { Expense } from '../db';
+import { expensesCollection, type Expense } from '../db';
 
 interface NavItem {
   id: string;
@@ -19,7 +20,7 @@ interface NavItem {
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('week');
+  const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
 
   // Calculate date range based on selected period
   const dateRange = useMemo(() => {
@@ -33,14 +34,10 @@ const Dashboard = () => {
         };
       case 'week':
         return {
-          start: startOfWeek(now, { weekStartsOn: 1 }), // Monday
+          start: startOfWeek(now, { weekStartsOn: 1 }),
           end: endOfWeek(now, { weekStartsOn: 1 })
         };
       case 'month':
-        return {
-          start: startOfMonth(now),
-          end: endOfMonth(now)
-        };
       default:
         return {
           start: startOfMonth(now),
@@ -49,24 +46,33 @@ const Dashboard = () => {
     }
   }, [selectedPeriod]);
 
-  // Live query for expenses within the selected date range
-  const { 
-    data: filteredExpenses = [], 
-    isLoading, 
-    error 
-  } = useLiveQuery((q: any) =>
-    q
-      .from({ expenses: 'expenses' })
-      .where(({ expenses }: { expenses: { date: string } }) => 
-        q.and(
-          q.gte(expenses.date, dateRange.start.toISOString()),
-          q.lte(expenses.date, dateRange.end.toISOString())
+const {
+  data: filteredExpenses = [],
+  isLoading,
+  isError
+} = useLiveQuery(
+  (q) => {
+    const query = q
+      .from({ expenses: expensesCollection })
+      .where(({ expenses }) =>
+        and(
+          gte(expenses.date, dateRange.start.toISOString()),
+          lte(expenses.date, dateRange.end.toISOString())
         )
-      )
-      .select()
-  , {
-    queryKey: ['expenses', selectedPeriod, dateRange.start.toISOString()],
-  });
+      );
+
+    return query.select(({ expenses }) => ({
+      id: expenses.id,
+      amount: expenses.amount,
+      description: expenses.description,
+      category_id: expenses.category_id,
+      date: expenses.date,
+      user_id: expenses.user_id,
+    }));
+  },
+  [selectedPeriod, dateRange.start.toISOString(), dateRange.end.toISOString()]
+);
+
 
   // Calculate expense summary by category
   interface ExpenseSummaryItem {
@@ -77,7 +83,7 @@ const Dashboard = () => {
   const expenseSummary = useMemo<ExpenseSummaryItem[]>(() => {
     if (!filteredExpenses.length) return [];
     
-    const summaryMap = filteredExpenses.reduce<Record<number, number>>((acc:Record<number, number>, expense:Expense) => {
+    const summaryMap = filteredExpenses.reduce<Record<number, number>>((acc, expense) => {
       const currentSum = acc[expense.category_id] || 0;
       acc[expense.category_id] = currentSum + expense.amount;
       return acc;
@@ -93,7 +99,7 @@ const Dashboard = () => {
     if (!filteredExpenses.length) return [];
     
     return filteredExpenses
-      .sort((a:Expense, b:Expense) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 12);
   }, [filteredExpenses]);
 
@@ -113,10 +119,8 @@ const Dashboard = () => {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
-  if (error) {
-    return <div className="flex items-center justify-center min-h-screen text-red-500">
-      Error loading expenses: {error instanceof Error ? error.message : 'Unknown error'}
-    </div>;
+  if (isError) {
+    emitError('Error loading expenses');
   }
 
   return (
@@ -235,24 +239,27 @@ const Dashboard = () => {
               <button className="text-xs text-primary-600">See All</button>
             </div>
             <div className="space-y-3">
-              {recentTransactions.map((transaction:Expense) => (
-                <div key={transaction.id} className="flex items-center bg-white rounded-xl p-3 shadow-sm">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
-                    transaction.type === 'income' ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
-                  }`}>
-                    {transaction.type === 'income' ? '↑' : '↓'}
+              {recentTransactions.map((transaction: Expense) => {
+                const isIncome = transaction.amount > 0;
+                return (
+                  <div key={transaction.id} className="flex items-center bg-white rounded-xl p-3 shadow-sm">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
+                      isIncome ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
+                    }`}>
+                      {isIncome ? '↑' : '↓'}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{transaction.description || 'Untitled'}</div>
+                      <div className="text-xs text-neutral-500">Category {transaction.category_id} • {transaction.date}</div>
+                    </div>
+                    <div className={`font-semibold ${
+                      isIncome ? 'text-success-600' : 'text-error-600'
+                    }`}>
+                      {isIncome ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="font-medium">{transaction.name}</div>
-                    <div className="text-xs text-neutral-500">{transaction.category} • {transaction.date}</div>
-                  </div>
-                  <div className={`font-semibold ${
-                    transaction.type === 'income' ? 'text-success-600' : 'text-error-600'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
