@@ -62,12 +62,7 @@ const {
       );
 
     return query.select(({ expenses }) => ({
-      id: expenses.id,
-      amount: expenses.amount,
-      description: expenses.description,
-      category_id: expenses.category_id,
-      date: expenses.date,
-      user_id: expenses.user_id,
+      ...expenses
     }));
   },
   [selectedPeriod, dateRange.start.toISOString(), dateRange.end.toISOString()]

@@ -3,6 +3,7 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { expenseSchema, type Expense } from '../index';
 import { ExpenseService } from '../../services/expenses/expense.service';
 import { queryClient } from '../queryClient';
+import type { NewExpenseInput } from '../../types/models';
 
 export const expensesCollection = createCollection<Expense>(
   queryCollectionOptions({
@@ -17,14 +18,13 @@ export const expensesCollection = createCollection<Expense>(
 
     onInsert: async ({ transaction }) => {
       const { changes } = transaction.mutations[0];
-      // Cast to any to bypass type checking since we know the shape matches
-      return await ExpenseService.create(changes as any);
+      const newExpense = changes as NewExpenseInput
+      return await ExpenseService.create(newExpense);
     },
 
     onUpdate: async ({ transaction }) => {
       const { key: id, changes } = transaction.mutations[0];
-      // Cast to any to bypass type checking since we know the shape matches
-      return await ExpenseService.update(id, changes as any);
+      return await ExpenseService.update(id, changes);
     },
 
     onDelete: async ({ transaction }) => {

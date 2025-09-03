@@ -1,5 +1,5 @@
 import { client } from "../http/client";
-import type { Expense } from "../../types/models";
+import type { Expense, NewExpenseInput } from "../../types/models";
 
 export const getExpenses = async (): Promise<Expense[]> => {
     const response = await client.get('/expenses');
@@ -11,7 +11,7 @@ export const getExpense = async (id: number): Promise<Expense> => {
     return response.data;
 };
 
-export const createExpense = async (expense: Expense): Promise<Expense> => {
+export const createExpense = async (expense: NewExpenseInput): Promise<Expense> => {
     const response = await client.post('/expenses', expense);
     return response.data;
 };

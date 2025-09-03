@@ -16,27 +16,3 @@ export const expenseSchema = z.object({
   date: z.string().datetime(),
   user_id: z.number()
 });
-
-// export const db = createDatabase({
-//   version: 1,
-//   name: 'expense-tracker-db',
-//   schema: {
-//     categories: {
-//       primaryKey: 'id',
-//       schema: categorySchema,
-//       indexes: [
-//         { name: 'user_id', keyPath: 'user_id', unique: false },
-//         { name: 'parent_id', keyPath: 'parent_id', unique: false }
-//       ]
-//     },
-//     expenses: {
-//       keyPath: 'id',
-//       schema: expenseSchema,
-//       indexes: [
-//         { name: 'user_id', keyPath: 'user_id', unique: false },
-//         { name: 'category_id', keyPath: 'category_id', unique: false },
-//         { name: 'date', keyPath: 'date', unique: false }
-//       ]
-//     }
-//   }
-// });
