@@ -1,16 +1,19 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useLiveQuery } from '@tanstack/react-db';
-import { and, gte, lte } from '@tanstack/db'
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { and, gte, lte, eq } from '@tanstack/db'
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
+import { ExpenseItem } from './Expenses/ExpenseItem';
 import { emitError } from '../services/errorBus';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
+import TableChartIcon from '@mui/icons-material/TableChart';
 import AddIcon from '@mui/icons-material/Add';
 import PieChartIcon from '@mui/icons-material/PieChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import type { ReactNode } from 'react';
-import { expensesCollection, type Expense } from '../db';
+import { expensesCollection, categoriesCollection } from '../db';
+import type { ExpenseWithCategory } from '../types/models';
 
 interface NavItem {
   id: string;
@@ -46,51 +49,59 @@ const Dashboard = () => {
     }
   }, [selectedPeriod]);
 
-const {
-  data: filteredExpenses = [],
-  isLoading,
-  isError
-} = useLiveQuery(
-  (q) => {
-    const query = q
-      .from({ expenses: expensesCollection })
-      .where(({ expenses }) =>
-        and(
-          gte(expenses.date, dateRange.start.toISOString()),
-          lte(expenses.date, dateRange.end.toISOString())
+  const {
+    data: filteredExpenses = [],
+    isLoading,
+    isError
+  } = useLiveQuery(
+    (q) => {
+      const query = q
+        .from({ expenses: expensesCollection })
+        .join(
+          { categories: categoriesCollection },
+          ({ expenses, categories }) => eq(expenses.category_id, categories.id),
+          'inner'
         )
-      );
+        .where(({ expenses }) =>
+          and(
+            gte(expenses.date, dateRange.start.toISOString()),
+            lte(expenses.date, dateRange.end.toISOString())
+          )
+        );
 
-    return query.select(({ expenses }) => ({
-      ...expenses
-    }));
-  },
-  [selectedPeriod, dateRange.start.toISOString(), dateRange.end.toISOString()]
-);
+      return query.select(({ expenses, categories }) => ({
+        ...expenses,
+        category: categories
+      }));
+    },
+    [selectedPeriod, dateRange.start.toISOString(), dateRange.end.toISOString()]
+  );
 
 
   // Calculate expense summary by category
   interface ExpenseSummaryItem {
-    category_id: number;
+    category_name: string;
     total: number;
   }
   
   const expenseSummary = useMemo<ExpenseSummaryItem[]>(() => {
     if (!filteredExpenses.length) return [];
     
-    const summaryMap = filteredExpenses.reduce<Record<number, number>>((acc, expense) => {
-      const currentSum = acc[expense.category_id] || 0;
-      acc[expense.category_id] = currentSum + expense.amount;
+    const summaryMap = filteredExpenses.reduce<Record<string, number>>((acc, expense) => {
+      const currentSum = acc[expense.category.name] || 0;
+      acc[expense.category.name] = currentSum + expense.amount;
       return acc;
     }, {});
     
-    return Object.entries(summaryMap).map(([categoryId, sum]) => ({
-      category_id: Number(categoryId),
-      total: Number(sum)
-    }));
+    return Object.entries(summaryMap)
+      .map(([category, sum]) => ({
+        category_name: category,
+        total: Number(sum)
+      }))
+      .sort((a, b) => b.total - a.total);
   }, [filteredExpenses]);
 
-  const recentTransactions = useMemo(() => {
+  const recentTransactions: ExpenseWithCategory[] = useMemo(() => {
     if (!filteredExpenses.length) return [];
     
     return filteredExpenses
@@ -109,6 +120,11 @@ const {
   const getTotalExpenses = (): number => {
     return expenseSummary.reduce((sum, item) => sum + item.total, 0);
   };
+
+  const getLargestExpense = (): number => {
+    if (!filteredExpenses.length) return 0;
+    return Math.max(...filteredExpenses.map(expense => expense.amount));
+  }
 
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -143,39 +159,17 @@ const {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
             {/* Total Balance */}
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-neutral-500 text-sm">Total Balance</p>
-                  <p className="text-2xl font-bold">${(2500 - getTotalExpenses()).toFixed(2)}</p>
+                  <p className="text-neutral-500 text-sm">Total Expenses</p>
+                  <p className="text-2xl font-bold">$ {(getTotalExpenses()).toFixed(2)}</p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-                  <AccountBalanceWalletIcon className="text-primary-600" />
+                  <TableChartIcon className="text-primary-600" />
                 </div>
-              </div>
-              <div className="mt-2 text-xs text-success-600 flex items-center">
-                <span>↑ 12% from last month</span>
-              </div>
-            </div>
-
-            {/* Monthly Budget */}
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-neutral-500 text-sm">Monthly Budget</p>
-                  <p className="text-2xl font-bold">$2,500.00</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-success-50 flex items-center justify-center">
-                  <ReceiptIcon className="text-success-600" />
-                </div>
-              </div>
-              <div className="mt-2">
-                <div className="w-full bg-neutral-200 rounded-full h-1.5">
-                  <div className="bg-success-600 h-1.5 rounded-full" style={{ width: '65%' }}></div>
-                </div>
-                <p className="text-xs text-neutral-500 mt-1">65% of budget used</p>
               </div>
             </div>
 
@@ -184,25 +178,10 @@ const {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-neutral-500 text-sm">Biggest Expense</p>
-                  <p className="text-2xl font-bold">$1,200</p>
-                  <p className="text-xs text-neutral-500">Shopping</p>
+                  <p className="text-2xl font-bold">$ {getLargestExpense().toFixed(2)}</p>
                 </div>
                 <div className="w-10 h-10 rounded-lg bg-warning-50 flex items-center justify-center">
                   <ReceiptIcon className="text-warning-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Savings Goal */}
-            <div className="bg-white rounded-xl shadow-sm p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-neutral-500 text-sm">Savings Goal</p>
-                  <p className="text-2xl font-bold">$1,500</p>
-                  <p className="text-xs text-neutral-500">${(2500 - getTotalExpenses()).toFixed(2)} saved</p>
-                </div>
-                <div className="w-10 h-10 rounded-lg bg-secondary-50 flex items-center justify-center">
-                  <PieChartIcon className="text-secondary-600" />
                 </div>
               </div>
             </div>
@@ -211,17 +190,21 @@ const {
           {/* Expense Categories */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-neutral-900">Expense Categories</h2>
+              <h2 className="text-lg font-semibold text-neutral-900">Top Expense Categories</h2>
               <button className="text-xs text-primary-600">See All</button>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {expenseSummary.map((item) => (
-                <div key={item.category_id} className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center mb-2">
-                    <ReceiptIcon />
+              {expenseSummary.slice(0, 4).map((item) => (
+                <div key={item.category_name} className="bg-white rounded-xl p-4 shadow-sm">
+                  <div className="flex items-center gap-5">
+                    <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex-shrink-0 flex items-center justify-center">
+                      <ReceiptIcon />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm text-neutral-500 truncate">{item.category_name}</div>
+                      <div className="font-semibold">${item.total.toFixed(2)}</div>
+                    </div>
                   </div>
-                  <div className="text-sm text-neutral-500">Category {item.category_id}</div>
-                  <div className="font-semibold">${item.total.toFixed(2)}</div>
                 </div>
               ))}
             </div>
@@ -230,31 +213,15 @@ const {
           {/* Recent Transactions */}
           <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-neutral-900">Recent Transactions</h2>
-              <button className="text-xs text-primary-600">See All</button>
+              <h2 className="text-lg font-semibold text-neutral-900">Recent Expenses</h2>
+              <Link to="/expenses" className="text-xs text-primary-600 hover:text-primary-700">
+                See All
+              </Link>
             </div>
             <div className="space-y-3">
-              {recentTransactions.map((transaction: Expense) => {
-                const isIncome = transaction.amount > 0;
-                return (
-                  <div key={transaction.id} className="flex items-center bg-white rounded-xl p-3 shadow-sm">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-3 ${
-                      isIncome ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
-                    }`}>
-                      {isIncome ? '↑' : '↓'}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{transaction.description || 'Untitled'}</div>
-                      <div className="text-xs text-neutral-500">Category {transaction.category_id} • {transaction.date}</div>
-                    </div>
-                    <div className={`font-semibold ${
-                      isIncome ? 'text-success-600' : 'text-error-600'
-                    }`}>
-                      {isIncome ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
-                    </div>
-                  </div>
-                );
-              })}
+              {recentTransactions.map((expense: ExpenseWithCategory) => (
+                <ExpenseItem key={expense.id} {...expense} />
+              ))}
             </div>
           </div>
         </div>
