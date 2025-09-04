@@ -1,28 +1,18 @@
 import { useState, useMemo } from 'react';
+import Layout from './Layout';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from '@tanstack/react-db';
 import { and, gte, lte, eq } from '@tanstack/db'
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
 import { ExpenseItem } from './Expenses/ExpenseItem';
 import { emitError } from '../services/errorBus';
-import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
 import TableChartIcon from '@mui/icons-material/TableChart';
-import AddIcon from '@mui/icons-material/Add';
-import PieChartIcon from '@mui/icons-material/PieChart';
-import SettingsIcon from '@mui/icons-material/Settings';
-import type { ReactNode } from 'react';
 import { expensesCollection, categoriesCollection } from '../db';
 import type { ExpenseWithCategory } from '../types/models';
-
-interface NavItem {
-  id: string;
-  icon: ReactNode;
-  label: string;
-}
+import WrapperTile from '../components/WrapperTile';
 
 const Dashboard = () => {
-  const [activeTab, setActiveTab] = useState<string>('home');
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
 
   // Calculate date range based on selected period
@@ -109,14 +99,6 @@ const Dashboard = () => {
       .slice(0, 12);
   }, [filteredExpenses]);
 
-  const navItems: NavItem[] = [
-    { id: 'home', icon: <HomeIcon fontSize="large" />, label: 'Home' },
-    { id: 'transactions', icon: <ReceiptIcon fontSize="large" />, label: 'Transactions' },
-    { id: 'add', icon: <AddIcon fontSize="large" />, label: 'Add' },
-    { id: 'stats', icon: <PieChartIcon fontSize="large" />, label: 'Stats' },
-    { id: 'settings', icon: <SettingsIcon fontSize="large" />, label: 'Settings' },
-  ];
-
   const getTotalExpenses = (): number => {
     return expenseSummary.reduce((sum, item) => sum + item.total, 0);
   };
@@ -134,32 +116,33 @@ const Dashboard = () => {
     emitError('Error loading expenses');
   }
 
-  return (
-    <div className="relative flex flex-col min-h-screen bg-neutral-50">
-      <div className="flex-1 pb-1">
-        <div className="max-w-6xl mx-auto w-full px-4">
-          {/* Period Selector */}
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold text-neutral-900">Expense Overview</h1>
-            <div className="flex space-x-2 bg-white p-1 rounded-lg shadow-sm">
-              {(['day', 'week', 'month'] as const).map((period) => (
-                <button
-                  key={period}
-                  onClick={() => setSelectedPeriod(period)}
-                  className={`px-3 py-1 text-sm rounded-md ${
-                    selectedPeriod === period 
-                      ? 'bg-primary-100 text-primary-600 font-medium' 
-                      : 'text-neutral-600'
-                  }`}
-                >
-                  {period.charAt(0).toUpperCase() + period.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
+  const header = (
+    <div className="flex justify-between items-center">
+      <h1 className="text-2xl font-bold text-neutral-900">Expense Overview</h1>
+      <div className="flex space-x-2 bg-white p-1 rounded-lg shadow-sm">
+        {(['day', 'week', 'month'] as const).map((period) => (
+          <button
+            key={period}
+            onClick={() => setSelectedPeriod(period)}
+            className={`px-3 py-1 text-sm rounded-md ${
+              selectedPeriod === period 
+                ? 'bg-primary-100 text-primary-600 font-medium' 
+                : 'text-neutral-600'
+            }`}
+          >
+            {period.charAt(0).toUpperCase() + period.slice(1)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
+  return (
+    <Layout header={header}>
+      <div className="w-full">
+        <WrapperTile>
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
             {/* Total Balance */}
             <div className="bg-white rounded-xl shadow-sm p-4">
               <div className="flex items-center justify-between">
@@ -186,9 +169,10 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
+        </WrapperTile>
+        
+        <WrapperTile>
           {/* Expense Categories */}
-          <div className="mb-6">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold text-neutral-900">Top Expense Categories</h2>
               <button className="text-xs text-primary-600">See All</button>
@@ -208,48 +192,24 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-          </div>
-
+        </WrapperTile>
+        
+        <WrapperTile>
           {/* Recent Transactions */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-neutral-900">Recent Expenses</h2>
-              <Link to="/expenses" className="text-xs text-primary-600 hover:text-primary-700">
-                See All
-              </Link>
-            </div>
-            <div className="space-y-3">
-              {recentTransactions.map((expense: ExpenseWithCategory) => (
-                <ExpenseItem key={expense.id} {...expense} />
-              ))}
-            </div>
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="text-lg font-semibold text-neutral-900">Recent Expenses</h2>
+            <Link to="/expenses" className="text-xs text-primary-600 hover:text-primary-700">
+              See All
+            </Link>
           </div>
-        </div>
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="flex-1 bottom-0 left-0 right-0 border-t border-neutral-200 shadow-sm">
-        <div className="max-w-6xl mx-auto bg-white px-4">
-          <nav className="flex justify-between">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`flex items-center justify-center p-2 ${activeTab === item.id ? 'transform -translate-y-1' : ''} transition-transform duration-200`}
-              >
-                <span className={`p-3 ${
-                  activeTab === item.id 
-                    ? 'bg-primary-100 rounded-lg' 
-                    : 'hover:bg-neutral-100 rounded-full'
-                }`}>
-                  {item.icon}
-                </span>
-              </button>
+          <div className="space-y-3">
+            {recentTransactions.map((expense: ExpenseWithCategory) => (
+              <ExpenseItem key={expense.id} {...expense} />
             ))}
-          </nav>
-        </div>
+          </div>
+        </WrapperTile>    
       </div>
-    </div>
+    </Layout>
   );
 };
 
