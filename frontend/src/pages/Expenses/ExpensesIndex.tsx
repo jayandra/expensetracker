@@ -1,10 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useLiveQuery } from '@tanstack/react-db';
 import { and, gte, lte, eq } from '@tanstack/db';
-import { format, startOfMonth, endOfMonth, startOfDay, endOfDay, startOfWeek, endOfWeek, isSameMonth } from 'date-fns';
-import { DateRangePicker } from 'react-date-range';
-import 'react-date-range/dist/styles.css';
-import 'react-date-range/dist/theme/default.css';
+import { format, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
 
 import Layout from '../Layout';
 import { ExpenseItem } from './ExpenseItem';
@@ -13,11 +10,9 @@ import type { ExpenseWithCategory } from '../../types/models';
 import WrapperTile from '../../components/WrapperTile';
 
 const ExpensesIndex = () => {
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [dateRange, setDateRange] = useState({
     startDate: startOfMonth(new Date()),
     endDate: endOfMonth(new Date()),
-    key: 'selection',
   });
 
   const {
@@ -52,65 +47,49 @@ const ExpensesIndex = () => {
   const totalExpenses = useMemo(
     () =>
       filteredExpenses
-        .filter((expense) => expense.amount < 0)
         .reduce((sum, expense) => sum + Math.abs(expense.amount), 0)
         .toFixed(2),
     [filteredExpenses]
   );
 
-  const handleSelect = useCallback((ranges: any) => {
-    try {
-      setDateRange({
-        startDate: new Date(ranges.selection.startDate),
-        endDate: new Date(ranges.selection.endDate),
-        key: 'selection',
-      });
-      setShowDatePicker(false);
-    } catch (error) {
-      console.error('Error setting date range:', error);
-      // Reset to current month on error
-      setDateRange({
-        startDate: startOfMonth(new Date()),
-        endDate: endOfMonth(new Date()),
-        key: 'selection',
-      });
-    }
-  }, []);
-
-  const formatDateRange = (start: Date, end: Date) => {
-    if (isSameMonth(start, end)) {
-      return format(start, 'MMM d') + ' - ' + format(end, 'd, yyyy');
-    }
-    return format(start, 'MMM d, yyyy') + ' - ' + format(end, 'MMM d, yyyy');
+  const handleDateChange = (type: 'start' | 'end', e: React.ChangeEvent<HTMLInputElement>) => {
+    const date = new Date(e.target.value);
+    if (isNaN(date.getTime())) return;
+    
+    setDateRange(prev => ({
+      startDate: type === 'start' ? date : prev.startDate,
+      endDate: type === 'end' ? date : prev.endDate,
+    }));
   };
+  
+  // Format date to YYYY-MM-DD for input fields
+  const formatForInput = (date: Date) => date.toISOString().split('T')[0];
 
   if (isError) {
     throw new Error('Failed to load expenses. Please try again later.');
   }
 
   const header = (
-    <div className="flex justify-between items-center">
+    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
       <h1 className="text-2xl font-bold text-neutral-900">Expenses</h1>
-      <div className="relative">
-        <button
-          onClick={() => setShowDatePicker(!showDatePicker)}
-          className="px-4 py-2 border rounded-lg text-sm font-medium"
-        >
-          {formatDateRange(dateRange.startDate, dateRange.endDate)}
-        </button>
-        {showDatePicker && (
-          <div className="absolute right-0 z-10 mt-2">
-            <DateRangePicker
-              ranges={[dateRange]}
-              onChange={handleSelect}
-              months={2}
-              direction="horizontal"
-              showMonthAndYearPickers={true}
-              rangeColors={['#3B82F6']}
-              className="border rounded-lg shadow-lg"
-            />
-          </div>
-        )}
+      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="relative flex-1">
+          <input
+            type="date"
+            value={formatForInput(dateRange.startDate)}
+            onChange={(e) => handleDateChange('start', e)}
+            className="w-full px-3 py-2 border rounded-lg text-sm"
+          />
+        </div>
+        <div className="relative flex-1">
+          <input
+            type="date"
+            value={formatForInput(dateRange.endDate)}
+            onChange={(e) => handleDateChange('end', e)}
+            min={formatForInput(dateRange.startDate)}
+            className="w-full px-3 py-2 border rounded-lg text-sm"
+          />
+        </div>
       </div>
     </div>
   );

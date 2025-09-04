@@ -173,24 +173,37 @@ const Dashboard = () => {
         
         <WrapperTile>
           {/* Expense Categories */}
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-neutral-900">Top Expense Categories</h2>
-              <button className="text-xs text-primary-600">See All</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {expenseSummary.slice(0, 4).map((item) => (
-                <div key={item.category_name} className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex items-center gap-5">
-                    <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex-shrink-0 flex items-center justify-center">
-                      <ReceiptIcon />
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-neutral-900">Top Expense Categories</h2>
+                <button className="text-xs text-primary-600">See All</button>
+              </div>
+              <div className="space-y-4">
+                {expenseSummary.slice(0,5).map((item, index) => {
+                  // Calculate percentage of total expenses
+                  const percentage = (item.total / getTotalExpenses()) * 100;
+                  // Using primary color for all progress bars
+                  const colors = ['bg-primary-500'];
+                  
+                  return (
+                    <div key={item.category_name} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-neutral-700">{item.category_name}</span>
+                        <span className="font-medium">${item.total.toFixed(2)}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className={`h-full rounded-full ${colors[index % colors.length]}`}
+                          style={{ width: `${Math.min(100, Math.max(5, percentage))}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-neutral-500 text-right">
+                        {percentage.toFixed(1)}% of total
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-sm text-neutral-500 truncate">{item.category_name}</div>
-                      <div className="font-semibold">${item.total.toFixed(2)}</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
         </WrapperTile>
         
