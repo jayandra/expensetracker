@@ -1,14 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from '@tanstack/react-db';
-import { and, gte, lte} from '@tanstack/db'
-import { startOfMonth, endOfMonth, startOfDay } from 'date-fns';
-import { formatForInput, resetHours } from '../../utils'
-
+import { and, gte, lte } from '@tanstack/db';
 
 import Layout from '../Layout';
 import { ExpenseItem } from '../Expenses/ExpenseItem';
 import { expensesCollection, updateExpenseCollection } from '../../db';
 import WrapperTile from '../../components/WrapperTile';
+import {formatDate, getCurrentMonthRange} from '../../utils'
 
 const ExpensesIndex = () => {
   // Get min and max dates from the collection
@@ -16,42 +14,54 @@ const ExpensesIndex = () => {
     (q) => q.from({ e: expensesCollection })
   );
 
-  // Initialize dates based on data or current month
+  // Initialize date range for internal computation (stored as 'YYYY-MM-DD' strings)
   const [dateRange, setDateRange] = useState(() => {
+    const { firstDay, lastDay } = getCurrentMonthRange();
+    const defaultStart = formatDate(firstDay);
+    const defaultEnd = formatDate(lastDay);
+    
     if (allExpenses.length === 0) {
       return {
-        startDate: startOfMonth(new Date()),
-        endDate: endOfMonth(new Date())
+        startDate: defaultStart,
+        endDate: defaultEnd
       };
     }
     
-    const dates = allExpenses.map(e => new Date(e.date));
-    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    // Find min and max dates from expenses and ensure they're in YYYY-MM-DD format
+    const dates = allExpenses.map(e => e.date.split('T')[0]);
+    const minDate = dates.reduce((min, date) => date < min ? date : min, dates[0]);
+    const maxDate = dates.reduce((max, date) => date > max ? date : max, dates[0]);
     
     return {
-      startDate: resetHours(minDate) < resetHours(startOfMonth(new Date())) ? minDate : startOfMonth(new Date()),
-      endDate: resetHours(maxDate) > resetHours(endOfMonth(new Date())) ? maxDate : endOfMonth(new Date())
+      startDate: minDate < defaultStart ? minDate : defaultStart,
+      endDate: maxDate > defaultEnd ? maxDate : defaultEnd
     };
   });
   
-  // Initialize selected dates to match the initial date range
-  const [selectedDates, setSelectedDates] = useState(() => ({
-    startDate: dateRange.startDate,
-    endDate: dateRange.endDate
-  }));
+  // Initialize selected dates for display (stored as 'YYYY-MM-DD' strings)
+  const [selectedDates, setSelectedDates] = useState({ start_date: '', end_date: '' });
+
+  // Initialize and update selected dates when dateRange changes
+  useEffect(() => {
+    if (dateRange.startDate && dateRange.endDate) {
+      setSelectedDates({
+        start_date: dateRange.startDate,
+        end_date: dateRange.endDate
+      });
+    }
+  }, [dateRange]);
 
   const { data: filteredExpenses = [], isLoading, isError } = useLiveQuery(
     (q) => 
       q.from({ e: expensesCollection })
        .where(({ e }) => 
          and(
-           gte(e.date, dateRange.startDate.toISOString()),
-           lte(e.date, dateRange.endDate.toISOString())
+           gte(e.date, dateRange.startDate),
+           lte(e.date, dateRange.endDate)
          )
       )
       .orderBy(({ e }) => e.date, 'desc'),
-    ['expenses', resetHours(dateRange.startDate), resetHours(dateRange.endDate)]
+    ['expenses', dateRange.startDate, dateRange.endDate]
   );
 
   const totalExpenses = useMemo(
@@ -59,36 +69,37 @@ const ExpensesIndex = () => {
       filteredExpenses
         .reduce((sum, expense) => sum + Math.abs(expense.amount), 0)
         .toFixed(2),
-    [filteredExpenses, dateRange.startDate, dateRange.endDate]
+    [filteredExpenses]
   );
 
   const handleDateChange = (type: 'start' | 'end', e: React.ChangeEvent<HTMLInputElement>) => {
-    // Create date from input value (browser will handle timezone conversion)
-    const date = new Date(e.target.value);
-
+    const dateValue = e.target.value;
     setSelectedDates(prev => ({
       ...prev,
-      [type === 'start' ? 'startDate' : 'endDate']: date
+      [type === 'start' ? 'start_date' : 'end_date']: dateValue
     }));
   };
   
   const applyDateRange = async () => {
-    // Create new date objects to avoid reference issues
-    const newStartDate = new Date(selectedDates.startDate);
-    const newEndDate = new Date(selectedDates.endDate);
+    // Ensure start date is before or equal to end date
+    const startDate = selectedDates.start_date;
+    const endDate = selectedDates.end_date;
     
-    newStartDate.setUTCHours(0, 0, 0, 0);
-    newEndDate.setUTCHours(23, 59, 59, 999);
-    
-    setDateRange({
-      startDate: newStartDate,
-      endDate: newEndDate
-    });
-    console.log('applied date....aa..')
-    console.log(newStartDate);
-    console.log(newEndDate)
+    if (startDate > endDate) {
+      // Swap dates if they're in the wrong order
+      setDateRange({
+        startDate: endDate,
+        endDate: startDate
+      });
+    } else {
+      setDateRange({
+        startDate,
+        endDate
+      });
+    }
+
     // Update the expense collection with the new date range
-    await updateExpenseCollection(newStartDate, newEndDate);
+    await updateExpenseCollection(startDate, endDate);
   };
   
 
@@ -103,17 +114,18 @@ const ExpensesIndex = () => {
         <div className="relative flex-1">
           <input
             type="date"
-            value={formatForInput(selectedDates.startDate)}
+            value={selectedDates.start_date}
             onChange={(e) => handleDateChange('start', e)}
+            max={selectedDates.end_date}
             className="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div className="relative flex-1">
           <input
             type="date"
-            value={formatForInput(selectedDates.endDate)}
+            value={selectedDates.end_date}
             onChange={(e) => handleDateChange('end', e)}
-            min={formatForInput(selectedDates.startDate)}
+            min={selectedDates.start_date}
             className="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>

@@ -35,7 +35,7 @@ export const expensesCollection = createCollection<Expense>(
   })
 );
 
-export const updateExpenseCollection = async (startDate: Date, endDate: Date) => {
+export const updateExpenseCollection = async (startDate: string, endDate: string) => {
   try {
     // Fetch expenses for the given date range
     const newExpenses = await ExpenseService.index({ startDate, endDate });

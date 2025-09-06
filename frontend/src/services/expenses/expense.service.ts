@@ -2,15 +2,15 @@ import type { Expense, NewExpenseInput } from '../../types/models';
 import { getExpenses, getExpense, createExpense, updateExpense, deleteExpense } from '../../api/endpoints/expenses';
 
 type DateRange = {
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
 };
 
 export const ExpenseService = {
     index: (dateRange?: DateRange) => {
       const params = dateRange ? {
-        startDate: dateRange.startDate || undefined,
-        endDate: dateRange.endDate || undefined
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
       } : undefined;
       return getExpenses(params);
     },
