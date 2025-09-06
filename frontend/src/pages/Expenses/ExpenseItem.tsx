@@ -1,8 +1,17 @@
-import { format } from 'date-fns';
-import { type ExpenseWithCategory } from '../../types/models';
+import { useLiveQuery } from '@tanstack/react-db';
+import { type Expense } from '../../types/models';
+import { categoriesCollection } from '../../db';
 
-export const ExpenseItem = (transaction: ExpenseWithCategory) => {
+export const ExpenseItem = (transaction: Expense) => {
   const isIncome = transaction.amount >= 0;
+    // Get the category directly from the cached collection
+  const { data: categories } = useLiveQuery(
+    (q) => q.from({ categories: categoriesCollection }).select(({categories}) => ({...categories})),
+    []
+  );
+  
+  // Find the category in the cached collection
+  const category = categories?.find(cat => cat.id === transaction.category_id);
 
   return (
     <div className="flex items-center bg-white rounded-xl p-3 shadow-sm">
@@ -14,13 +23,13 @@ export const ExpenseItem = (transaction: ExpenseWithCategory) => {
       <div className="flex-1 md:mr-3">
         <div className="font-medium">{transaction.description || 'Untitled'}</div>
         <div className="text-xs text-neutral-500">
-          {transaction.category?.name || 'Uncategorized'} • {format(new Date(transaction.date), 'MMM d, yyyy')}
+          {category?.name || 'Uncategorized'} • {new Date(transaction.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}
         </div>
       </div>
       <div className={`font-semibold ${
         isIncome ? 'text-success-600' : 'text-error-600'
       }`}>
-        ${Math.abs(transaction.amount).toFixed(2)}
+        $ {Math.abs(transaction.amount).toFixed(2)}
       </div>
     </div>
   );

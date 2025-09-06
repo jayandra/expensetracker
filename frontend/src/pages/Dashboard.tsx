@@ -9,7 +9,7 @@ import { emitError } from '../services/errorBus';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { expensesCollection, categoriesCollection } from '../db';
-import type { ExpenseWithCategory } from '../types/models';
+import type { Expense } from '../types/models';
 import WrapperTile from '../components/WrapperTile';
 
 const Dashboard = () => {
@@ -57,7 +57,8 @@ const Dashboard = () => {
             gte(expenses.date, dateRange.start.toISOString()),
             lte(expenses.date, dateRange.end.toISOString())
           )
-        );
+        )
+        .orderBy(({ expenses }) => expenses.date, 'desc');
 
       return query.select(({ expenses, categories }) => ({
         ...expenses,
@@ -91,7 +92,7 @@ const Dashboard = () => {
       .sort((a, b) => b.total - a.total);
   }, [filteredExpenses]);
 
-  const recentTransactions: ExpenseWithCategory[] = useMemo(() => {
+  const recentTransactions: Expense[] = useMemo(() => {
     if (!filteredExpenses.length) return [];
     
     return filteredExpenses
@@ -216,7 +217,7 @@ const Dashboard = () => {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentTransactions.map((expense: ExpenseWithCategory) => (
+            {recentTransactions.map((expense: Expense) => (
               <ExpenseItem key={expense.id} {...expense} />
             ))}
           </div>
