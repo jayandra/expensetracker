@@ -34,3 +34,36 @@ export const expensesCollection = createCollection<Expense>(
     },
   })
 );
+
+export const updateExpenseCollection = async (startDate: Date, endDate: Date) => {
+  try {
+    // Fetch expenses for the given date range
+    const newExpenses = await ExpenseService.index({ startDate, endDate });
+    
+    // Get current data from the query cache
+    const currentData = queryClient.getQueryData<Expense[]>(['expenses']) || [];
+    
+    // Create a map to avoid duplicates (in case of overlapping date ranges)
+    const expenseMap = new Map<string, Expense>();
+    
+    // Add existing expenses to the map
+    currentData.forEach(expense => {
+      expenseMap.set(expense.id.toString(), expense);
+    });
+    
+    // Add or update with new expenses
+    newExpenses.forEach(expense => {
+      expenseMap.set(expense.id.toString(), expense);
+    });
+    
+    // Convert back to array and update the cache
+    const updatedExpenses = Array.from(expenseMap.values());
+    queryClient.setQueryData(['expenses'], updatedExpenses);
+    
+    return updatedExpenses;
+  } catch (error) {
+    console.error('Error updating expense collection:', error);
+    throw error;
+  }
+};
+

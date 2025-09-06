@@ -1,47 +1,57 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from '@tanstack/react-db';
-import { and, gte, lte, eq } from '@tanstack/db';
-import { format, startOfMonth, endOfMonth, isSameMonth } from 'date-fns';
+import { and, gte, lte} from '@tanstack/db'
+import { startOfMonth, endOfMonth, startOfDay } from 'date-fns';
+import { formatForInput, resetHours } from '../../utils'
+
 
 import Layout from '../Layout';
-import { ExpenseItem } from './ExpenseItem';
-import { expensesCollection, categoriesCollection } from '../../db';
-import type { ExpenseWithCategory } from '../../types/models';
+import { ExpenseItem } from '../Expenses/ExpenseItem';
+import { expensesCollection, updateExpenseCollection } from '../../db';
 import WrapperTile from '../../components/WrapperTile';
 
 const ExpensesIndex = () => {
-  const [dateRange, setDateRange] = useState({
-    startDate: startOfMonth(new Date()),
-    endDate: endOfMonth(new Date()),
+  // Get min and max dates from the collection
+  const { data: allExpenses = [] } = useLiveQuery(
+    (q) => q.from({ e: expensesCollection })
+  );
+
+  // Initialize dates based on data or current month
+  const [dateRange, setDateRange] = useState(() => {
+    if (allExpenses.length === 0) {
+      return {
+        startDate: startOfMonth(new Date()),
+        endDate: endOfMonth(new Date())
+      };
+    }
+    
+    const dates = allExpenses.map(e => new Date(e.date));
+    const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+    
+    return {
+      startDate: resetHours(minDate) < resetHours(startOfMonth(new Date())) ? minDate : startOfMonth(new Date()),
+      endDate: resetHours(maxDate) > resetHours(endOfMonth(new Date())) ? maxDate : endOfMonth(new Date())
+    };
   });
+  
+  // Initialize selected dates to match the initial date range
+  const [selectedDates, setSelectedDates] = useState(() => ({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate
+  }));
 
-  const {
-    data: filteredExpenses = [],
-    isLoading,
-    isError
-  } = useLiveQuery(
-    (q) => {
-      const query = q
-        .from({ expenses: expensesCollection })
-        .join(
-          { categories: categoriesCollection },
-          ({ expenses, categories }) => eq(expenses.category_id, categories.id),
-          'inner'
-        )
-        .where(({ expenses }) =>
-          and(
-            gte(expenses.date, dateRange.startDate.toISOString()),
-            lte(expenses.date, dateRange.endDate.toISOString())
-          )
-        )
-        .orderBy(({ expenses }) => [expenses.date, 'desc']);
-
-      return query.select(({ expenses, categories }) => ({
-        ...expenses,
-        category: categories
-      }));
-    },
-    [dateRange.startDate.toISOString(), dateRange.endDate.toISOString()]
+  const { data: filteredExpenses = [], isLoading, isError } = useLiveQuery(
+    (q) => 
+      q.from({ e: expensesCollection })
+       .where(({ e }) => 
+         and(
+           gte(e.date, dateRange.startDate.toISOString()),
+           lte(e.date, dateRange.endDate.toISOString())
+         )
+      )
+      .orderBy(({ e }) => e.date, 'desc'),
+    ['expenses', resetHours(dateRange.startDate), resetHours(dateRange.endDate)]
   );
 
   const totalExpenses = useMemo(
@@ -49,21 +59,38 @@ const ExpensesIndex = () => {
       filteredExpenses
         .reduce((sum, expense) => sum + Math.abs(expense.amount), 0)
         .toFixed(2),
-    [filteredExpenses]
+    [filteredExpenses, dateRange.startDate, dateRange.endDate]
   );
 
   const handleDateChange = (type: 'start' | 'end', e: React.ChangeEvent<HTMLInputElement>) => {
+    // Create date from input value (browser will handle timezone conversion)
     const date = new Date(e.target.value);
-    if (isNaN(date.getTime())) return;
-    
-    setDateRange(prev => ({
-      startDate: type === 'start' ? date : prev.startDate,
-      endDate: type === 'end' ? date : prev.endDate,
+
+    setSelectedDates(prev => ({
+      ...prev,
+      [type === 'start' ? 'startDate' : 'endDate']: date
     }));
   };
   
-  // Format date to YYYY-MM-DD for input fields
-  const formatForInput = (date: Date) => date.toISOString().split('T')[0];
+  const applyDateRange = async () => {
+    // Create new date objects to avoid reference issues
+    const newStartDate = new Date(selectedDates.startDate);
+    const newEndDate = new Date(selectedDates.endDate);
+    
+    newStartDate.setUTCHours(0, 0, 0, 0);
+    newEndDate.setUTCHours(23, 59, 59, 999);
+    
+    setDateRange({
+      startDate: newStartDate,
+      endDate: newEndDate
+    });
+    console.log('applied date....aa..')
+    console.log(newStartDate);
+    console.log(newEndDate)
+    // Update the expense collection with the new date range
+    await updateExpenseCollection(newStartDate, newEndDate);
+  };
+  
 
   if (isError) {
     throw new Error('Failed to load expenses. Please try again later.');
@@ -76,7 +103,7 @@ const ExpensesIndex = () => {
         <div className="relative flex-1">
           <input
             type="date"
-            value={formatForInput(dateRange.startDate)}
+            value={formatForInput(selectedDates.startDate)}
             onChange={(e) => handleDateChange('start', e)}
             className="w-full px-3 py-2 border rounded-lg text-sm"
           />
@@ -84,12 +111,18 @@ const ExpensesIndex = () => {
         <div className="relative flex-1">
           <input
             type="date"
-            value={formatForInput(dateRange.endDate)}
+            value={formatForInput(selectedDates.endDate)}
             onChange={(e) => handleDateChange('end', e)}
-            min={formatForInput(dateRange.startDate)}
+            min={formatForInput(selectedDates.startDate)}
             className="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
+        <button
+          onClick={applyDateRange}
+          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
+        >
+          Go
+        </button>
       </div>
     </div>
   );
@@ -117,7 +150,7 @@ const ExpensesIndex = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
             </div>
           ) : filteredExpenses.length > 0 ? (
-            filteredExpenses.map((expense: ExpenseWithCategory) => (
+            filteredExpenses.map((expense) => (
               <ExpenseItem key={expense.id} {...expense} />
             ))
           ) : (

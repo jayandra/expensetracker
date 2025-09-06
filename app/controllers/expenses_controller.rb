@@ -4,7 +4,11 @@ class ExpensesController < ApplicationController
 
   # GET /expenses or /expenses.json
   def index
-    @expenses = scoped_expenses
+    # Apply date range filters if provided else default to current month
+    start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
+    end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
+
+    @expenses = scoped_expenses.where("DATE(expenses.date) >= ? and DATE(expenses.date) <= ?", start_date, end_date)
   end
 
   # GET /expenses/1 or /expenses/1.json
@@ -72,9 +76,12 @@ class ExpensesController < ApplicationController
   private
 
     def scoped_expenses
-      Expense.joins(:category)
-             .where(categories: { user_id: Current.user.id })
-             .order(date: :desc)
+      expenses = Expense.joins(:category)
+                       .where(categories: { user_id: Current.user.id })
+
+
+
+      expenses.order(date: :desc)
     end
 
     def scoped_categories

@@ -1,8 +1,21 @@
 import { client } from "../http/client";
 import type { Expense, NewExpenseInput } from "../../types/models";
 
-export const getExpenses = async (): Promise<Expense[]> => {
-    const response = await client.get('/expenses');
+export const getExpenses = async (dateRange?: { startDate?: Date; endDate?: Date }): Promise<Expense[]> => {
+    const params = new URLSearchParams();
+    
+    if (dateRange?.startDate) {
+        // Send only the date part (YYYY-MM-DD)
+        const dateStr = dateRange.startDate.toISOString().split('T')[0];
+        params.append('start_date', dateStr);
+    }
+    if (dateRange?.endDate) {
+        // Send only the date part (YYYY-MM-DD)
+        const dateStr = dateRange.endDate.toISOString().split('T')[0];
+        params.append('end_date', dateStr);
+    }
+    
+    const response = await client.get(`/expenses?${params.toString()}`);
     return response.data;
 };
 
