@@ -98,8 +98,10 @@ const ExpensesIndex = () => {
       });
     }
 
-    // Update the expense collection with the new date range
-    await updateExpenseCollection(startDate, endDate);
+    // Only update if the new range is outside the current bounds
+    if (startDate < dateRange.startDate || endDate > dateRange.endDate) {
+      await updateExpenseCollection(startDate, endDate);
+    }
   };
   
 
