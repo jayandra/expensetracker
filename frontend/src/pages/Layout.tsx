@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
@@ -24,21 +24,26 @@ export default function Layout({ children, header }: LayoutProps) {
     if (path === '/') {
       return location.pathname === '/';
     }
-    return location.pathname.startsWith(path);
+    return location.pathname == path;
   };
 
   const navItems: NavItem[] = [
     { path: '/', icon: <HomeIcon fontSize={isActive('/') ? 'large' : 'medium'} />, label: 'Home' },
     { path: '/expenses', icon: <ReceiptIcon fontSize={isActive('/expenses') ? 'large' : 'medium'} />, label: 'Expenses' },
-    { path: '/add', icon: <AddIcon className="text-white" fontSize="large" />, label: 'Add' },
+    { path: '/expenses/new', icon: <AddIcon fontSize={isActive('/expenses/new') ? 'large' : 'medium'} />, label: 'Add' },
     { path: '/reports', icon: <PieChartIcon fontSize={isActive('/reports') ? 'large' : 'medium'} />, label: 'Reports' },
     { path: '/settings', icon: <SettingsIcon fontSize={isActive('/settings') ? 'large' : 'medium'} />, label: 'Settings' },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen min-w-[320px] flex flex-col bg-gray-50">
       <div className="w-full flex-1">
-        <div className="w-full max-w-6xl mx-auto p-2 md:p-4">
+        <div className="w-full mx-auto p-2 md:p-4
+          min-w-[320px] sm:min-w-[640px]
+          md:min-w-[768px]
+          lg:max-w-4xl lg:min-w-[1024px]
+          xl:max-w-4xl xl:min-w-[1024px]
+          2xl:max-w-4xl 2xl:min-w-[1024px]">
           {header && <div className="mb-6">{header}</div>}
           {children}
         </div>
@@ -46,7 +51,12 @@ export default function Layout({ children, header }: LayoutProps) {
       
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
-        <div className="max-w-6xl mx-auto px-4">
+        <div className="w-full mx-auto px-4
+          min-w-[320px] sm:min-w-[640px]
+          md:min-w-[768px]
+          lg:max-w-4xl lg:min-w-[1024px]
+          xl:max-w-4xl xl:min-w-[1024px]
+          2xl:max-w-4xl 2xl:min-w-[1024px]">
           <div className="flex justify-around items-center h-16">
             {navItems.map((item, index) => (
               <Link
@@ -57,7 +67,7 @@ export default function Layout({ children, header }: LayoutProps) {
                 }`}
               >
                 {index === 2 ? (
-                  <div className="flex items-center justify-center w-14 h-14 -mt-6 bg-success-300 rounded-full text-white shadow-lg">
+                  <div className={`flex items-center justify-center w-14 h-14 -mt-6 rounded-full text-white shadow-lg ${isActive(item.path) ? 'bg-success-500' : 'bg-success-300'}`}>
                     {item.icon}
                   </div>
                 ) : (
