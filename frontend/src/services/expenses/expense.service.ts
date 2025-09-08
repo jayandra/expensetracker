@@ -15,8 +15,8 @@ export const ExpenseService = {
       return getExpenses(params);
     },
     show: (id: number) => getExpense(id),
-    create: (newexpense: NewExpenseInput) => createExpense(newexpense),
-    update: (id: number, expense: Partial<Expense>) => updateExpense(id, expense),
+    create: (expense: NewExpenseInput) => createExpense(expense),
+    update: (id: number, expense: Expense) => updateExpense(id, { ...expense, id }),
     destroy: (id: number) => deleteExpense(id)
 } as const;
     

@@ -14,7 +14,7 @@ export const ExpenseItem = (transaction: Expense) => {
   const category = categories?.find(cat => cat.id === transaction.category_id);
 
   return (
-    <div className="flex items-center bg-white rounded-xl p-3 shadow-sm">
+    <div className="flex items-center bg-white rounded-xl p-3 shadow-sm hover:bg-neutral-200">
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center md:mr-3 ${
         isIncome ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
       }`}>
