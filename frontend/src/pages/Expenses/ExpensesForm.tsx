@@ -1,15 +1,14 @@
-import {useState} from 'react';
+import {useState, useMemo} from 'react';
 import FormInput from '../../components/Form/FormInput';
 import Button from '../../components/Form/Button';
 import { formatDate } from '../../utils';
 import { useAuth } from '../../contexts/AuthContext';
 import { emitError } from '../../services/errorBus';
 import { useLiveQuery } from '@tanstack/react-db';
-import { categoriesCollection } from '../../db';
+import { categoriesCollection, buildCategoryOptions, type CategoryOption } from '../../db';
 import WrapperTile from '../../components/WrapperTile';
 import Layout from '../Layout';
-
-import type { Expense, NewExpenseInput } from '../../types/models';
+import type { NewExpenseInput, Expense } from '../../types/models';
 
 interface ExpensesFormProps {
     initialExpense?: Expense;
@@ -24,10 +23,24 @@ export const ExpensesForm = ({ initialExpense, onSubmit, isEditing = false }: Ex
         return <div></div>;
     }
 
-    const { data: categories } = useLiveQuery(
+    const { data: categories = [] } = useLiveQuery(
         (q) => q.from({ categories: categoriesCollection }).select(({categories}) => ({...categories})),
         []
     );
+
+    const [isCategoryFocused, setIsCategoryFocused] = useState(false);
+
+    const categoryOptions = useMemo<CategoryOption[]>(() => {
+        if (isCategoryFocused) {
+            return buildCategoryOptions(categories);
+        }
+        // Return flat categories with proper typing
+        return categories.map(cat => ({
+            value: cat.id,
+            label: cat.name,
+            depth: 0
+        }));
+    }, [categories, isCategoryFocused]);
 
     const defaultExpense: NewExpenseInput = {
         amount: 0,
@@ -90,8 +103,14 @@ export const ExpensesForm = ({ initialExpense, onSubmit, isEditing = false }: Ex
                     required
                     placeholder="Select a Category"
                     value={expense.category_id}
-                    options={categories?.map(cat => ({ value: cat.id, label: cat.name }))}
-                    onChange={(e) => setExpense({ ...expense, category_id: Number(e.target.value) })}
+                    options={categoryOptions}
+                    onFocus={() => setIsCategoryFocused(true)}
+                    onClick={() => setIsCategoryFocused(true)}
+                    onBlur={() => setTimeout(() => setIsCategoryFocused(false), 20)}
+                    onChange={(e) => {
+                        const selectedId = Number(e.target.value);
+                        setExpense({ ...expense, category_id: selectedId });
+                    }}
                 />
                 <div className="flex justify-end mt-4">
                     <Button type="submit">

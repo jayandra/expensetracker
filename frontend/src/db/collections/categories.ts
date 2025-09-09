@@ -43,11 +43,30 @@ export function getChildCategories(categories: Category[], parentId: number | nu
   return categories.filter(cat => cat.parent_id === parentId);
 }
 
-export function buildCategoryTree(categories: Category[], parentId: number | null = null): Category[] {
+export function buildCategoryTree(categories: Category[], parentId: number | null = null, depth = 0): Category[] {
   return categories
     .filter(category => category.parent_id === parentId)
     .map(category => ({
       ...category,
-      children: buildCategoryTree(categories, category.id)
+      children: buildCategoryTree(categories, category.id, depth + 1)
     }));
-};
+}
+
+interface CategoryOption {
+  value: number;
+  label: string;
+  depth: number;
+}
+
+export function buildCategoryOptions(categories: Category[], parentId: number | null = null, depth = 0): CategoryOption[] {
+  return categories
+    .filter(category => category.parent_id === parentId)
+    .flatMap(category => [
+      {
+        value: category.id,
+        label: '\u00A0'.repeat(depth * 2) + (depth > 0 ? '└─ ' : '') + category.name,
+        depth
+      },
+      ...buildCategoryOptions(categories, category.id, depth + 1)
+    ]);
+}
