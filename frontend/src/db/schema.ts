@@ -13,6 +13,5 @@ export const expenseSchema = z.object({
   amount: z.number(),
   description: z.string().nullable(),
   category_id: z.number(),
-  date: z.string(),
-  user_id: z.number()
+  date: z.string()
 });

@@ -3,37 +3,26 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { ExpenseService } from '../../services/expenses/expense.service';
 import { queryClient } from '../queryClient';
 import type { Expense, NewExpenseInput } from '../../types/models';
+import { expenseSchema } from '../schema';
 
-// Create a simple collection without schema validation
+// Create a collection with schema validation
 export const expensesCollection = createCollection<Expense>(
-  queryCollectionOptions<Expense>({
+  queryCollectionOptions({
     queryKey: ['expenses'],
     queryClient,
     getKey: (expense: Expense) => expense.id.toString(),
-    queryFn: async () => await ExpenseService.index(),
+    schema: expenseSchema,
+    queryFn: async () => {
+      const expenses = await ExpenseService.index();
+      return expenses;
+    },
     
     onInsert: async ({ transaction }) => {
       const { changes } = transaction.mutations[0];
-      // Validate that all required fields are present
-      if (changes.amount === undefined || 
-          changes.category_id === undefined || 
-          changes.date === undefined || 
-          changes.user_id === undefined) {
-        throw new Error('Missing required fields for expense creation');
-      }
-      
-      // Create a new expense without an ID
-      const newExpense: NewExpenseInput = {
-        amount: changes.amount,
-        description: changes.description ?? null,
-        category_id: changes.category_id,
-        date: changes.date,
-        user_id: changes.user_id
-      };
-      
+      const newExpense = changes as NewExpenseInput;
       const createdExpense = await ExpenseService.create(newExpense);
       
-      // Update the query cache directly
+      // Update the query cache
       queryClient.setQueryData<Expense[]>(['expenses'], (oldData = []) => {
         return [...oldData, createdExpense];
       });
@@ -43,27 +32,30 @@ export const expensesCollection = createCollection<Expense>(
     
     onUpdate: async ({ transaction }) => {
       const { key: id, changes } = transaction.mutations[0];
-      // Validate that all required fields are present
-      if (changes.id === undefined ||
-          changes.amount === undefined || 
-          changes.category_id === undefined || 
-          changes.date === undefined || 
-          changes.user_id === undefined) {
-        throw new Error('Missing required fields for expense update');
+
+      const expenseId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(expenseId)) {
+        throw new Error(`Invalid expense ID: ${id}`);
       }
       
-      const expenseUpdate: Expense = {
-        id: parseInt(id, 10),
-        amount: changes.amount,
-        description: changes.description ?? null,
-        category_id: changes.category_id,
-        date: changes.date,
-        user_id: changes.user_id
-      };
-  
-      const updatedExpense = await ExpenseService.update(expenseUpdate.id, expenseUpdate);
+      // Get the current expense to ensure we have all required fields
+      const currentExpenses = queryClient.getQueryData<Expense[]>(['expenses']) || [];
+      const currentExpense = currentExpenses.find(e => e.id === expenseId);
       
-      // Update the query cache directly
+      if (!currentExpense) {
+        throw new Error(`Expense with id ${expenseId} not found`);
+      }
+      
+      // Merge changes with current expense and validate
+      const expenseUpdate = {
+        ...currentExpense,
+        ...changes,
+        id: expenseId // Ensure ID is preserved as a number
+      };
+      
+      const updatedExpense = await ExpenseService.update(expenseId, expenseUpdate);
+      
+      // Update the query cache
       queryClient.setQueryData<Expense[]>(['expenses'], (oldData = []) => {
         return oldData.map(expense => 
           expense.id === updatedExpense.id ? updatedExpense : expense
@@ -75,7 +67,19 @@ export const expensesCollection = createCollection<Expense>(
     
     onDelete: async ({ transaction }) => {
       const { key: id } = transaction.mutations[0];
-      await ExpenseService.destroy(id);
+      
+      const expenseId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(expenseId)) {
+        throw new Error(`Invalid expense ID: ${id}`);
+      }
+      
+      await ExpenseService.destroy(expenseId);
+      
+      // Update the query cache
+      queryClient.setQueryData<Expense[]>(['expenses'], (oldData = []) => {
+        return oldData.filter(expense => expense.id !== expenseId);
+      });
+      
       return { refetch: false };
     },
   })

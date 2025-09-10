@@ -9,7 +9,8 @@ import ForgotPasswordForm from './pages/Auth/ForgotPasswordForm';
 import ResetPasswordForm from './pages/Auth/ResetPasswordForm';
 import './App.css';
 import ColorPalette from './pages/ColorPalette';
-import { ExpenseFormWrapper } from './pages/Expenses/ExpenseFormWrapper';
+import ExpenseEdit from './pages/Expenses/ExpenseEdit';
+import ExpenseCreate from './pages/Expenses/ExpenseCreate'
 
 // Main App component with routing
 function App() {
@@ -42,12 +43,12 @@ function App() {
           } />
           <Route path="/expenses/new" element={
             <ProtectedRoute>
-              <ExpenseFormWrapper mode="add" />
+              <ExpenseCreate />
             </ProtectedRoute>
           } />
           <Route path="/expenses/:id/edit" element={
             <ProtectedRoute>
-              <ExpenseFormWrapper mode="edit" />
+              <ExpenseEdit />
             </ProtectedRoute>
           } />
           
