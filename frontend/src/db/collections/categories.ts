@@ -3,6 +3,7 @@ import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { categorySchema, type Category, type NewCategoryInput } from '../index';
 import { CategoryService } from '../../services/categories/categories.service';
 import { queryClient } from '../queryClient';
+import { emitError } from '../../services/errorBus';
 
 export const categoriesCollection = createCollection<Category>(
   queryCollectionOptions({
@@ -18,18 +19,74 @@ export const categoriesCollection = createCollection<Category>(
     onInsert: async ({ transaction }) => {
       const { changes } = transaction.mutations[0];
       const newCategory = changes as NewCategoryInput;
-      return await CategoryService.create(newCategory);
+      try {
+        const createdCategory = await CategoryService.create(newCategory);
+      
+        // Update the query cache
+        queryClient.setQueryData<Category[]>(['categories'], (oldData = []) => {
+          return [...oldData, createdCategory];
+        });
+        return { refetch: false, data: createdCategory };
+      } catch (error) {
+        emitError('Failed to create category');
+        throw error;
+      }
     },
 
     onUpdate: async ({ transaction }) => {
       const { key: id, changes } = transaction.mutations[0];
-      return await CategoryService.update(id, changes);
+      
+      const categoryId = typeof id === 'string' ? parseInt(id, 10) : id;
+      if (isNaN(categoryId)) {
+        throw new Error(`Invalid category ID: ${id}`);
+      }
+      
+      // Get the current category to ensure we have all required fields
+      const currentCategories = queryClient.getQueryData<Category[]>(['categories']) || [];
+      const currentCategory = currentCategories.find(cat => cat.id === categoryId);
+      
+      if (!currentCategory) {
+        throw new Error(`Category with id ${categoryId} not found`);
+      }
+      
+      // Merge changes with current category and validate
+      const categoryUpdate = {
+        ...currentCategory,
+        ...changes,
+        id: categoryId // Ensure ID is preserved as a number
+      };
+      
+      try {
+        const updatedCategory = await CategoryService.update(categoryId, categoryUpdate);
+        
+        // Update the query cache
+        queryClient.setQueryData<Category[]>(['categories'], (oldData = []) => {
+          return oldData.map(category => category.id === categoryId ? updatedCategory : category);
+        });
+        
+        return { refetch: false, data: updatedCategory };
+      } catch (error) {
+        emitError('Failed to update category');
+        throw error;
+      }
     },
 
     onDelete: async ({ transaction }) => {
       const { key: id } = transaction.mutations[0];
-      await CategoryService.destroy(id);
-      return { refetch: false }; // Or { refetch: true } depending on your needs
+      const categoryId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      if (isNaN(categoryId)) {
+        throw new Error(`Invalid category ID: ${id}`);
+      }
+      
+      await CategoryService.destroy(categoryId);
+      
+      // Update the query cache
+      queryClient.setQueryData<Category[]>(['categories'], (oldData = []) => {
+        return oldData.filter(category => category.id !== categoryId);
+      });
+      
+      return { refetch: false };
     },
   })
 );

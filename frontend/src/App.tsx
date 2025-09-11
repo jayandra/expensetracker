@@ -10,7 +10,10 @@ import ResetPasswordForm from './pages/Auth/ResetPasswordForm';
 import './App.css';
 import ColorPalette from './pages/ColorPalette';
 import ExpenseEdit from './pages/Expenses/ExpenseEdit';
-import ExpenseCreate from './pages/Expenses/ExpenseCreate'
+import ExpenseCreate from './pages/Expenses/ExpenseCreate';
+import CategoriesIndex from './pages/Categories/CategoriesIndex';
+import CategoryCreate from './pages/Categories/CategoryCreate';
+import CategoryEdit from './pages/Categories/CategoryEdit';
 
 // Main App component with routing
 function App() {
@@ -49,6 +52,21 @@ function App() {
           <Route path="/expenses/:id/edit" element={
             <ProtectedRoute>
               <ExpenseEdit />
+            </ProtectedRoute>
+          } />
+          <Route path="/categories" element={
+            <ProtectedRoute>
+              <CategoriesIndex />
+            </ProtectedRoute>
+          } />
+          <Route path="/categories/new" element={
+            <ProtectedRoute>
+              <CategoryCreate />
+            </ProtectedRoute>
+          } />
+          <Route path="/categories/:id/edit" element={
+            <ProtectedRoute>
+              <CategoryEdit />
             </ProtectedRoute>
           } />
           

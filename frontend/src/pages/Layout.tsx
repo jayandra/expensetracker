@@ -31,7 +31,7 @@ export default function Layout({ children, header }: LayoutProps) {
     { path: '/', icon: <HomeIcon fontSize={isActive('/') ? 'large' : 'medium'} />, label: 'Home' },
     { path: '/expenses', icon: <ReceiptIcon fontSize={isActive('/expenses') ? 'large' : 'medium'} />, label: 'Expenses' },
     { path: '/expenses/new', icon: <AddIcon fontSize={isActive('/expenses/new') ? 'large' : 'medium'} />, label: 'Add' },
-    { path: '/reports', icon: <PieChartIcon fontSize={isActive('/reports') ? 'large' : 'medium'} />, label: 'Reports' },
+    { path: '/categories', icon: <PieChartIcon fontSize={isActive('/categories') ? 'large' : 'medium'} />, label: 'Categories' },
     { path: '/settings', icon: <SettingsIcon fontSize={isActive('/settings') ? 'large' : 'medium'} />, label: 'Settings' },
   ];
 
