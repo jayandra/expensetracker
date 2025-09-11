@@ -29,7 +29,7 @@ const FormInput = forwardRef<HTMLInputElement | HTMLSelectElement, FormInputProp
 }, ref) => {
   const inputId = id || `input-${label.replace(/\s+/g, '-').toLowerCase()}`;
   
-  const commonClasses = `appearance-none relative block w-full min-w-full px-3 py-2 border border-neutral-300 focus:outline-none focus:z-10 text-sm placeholder:text-neutral-500 text-neutral-900 focus:ring-primary-500 focus:border-primary-500 ${type === 'select' ? 'pr-10' : ''} ${className} ${
+  const commonClasses = `appearance-none relative block w-full min-w-full px-3 py-2 border border-neutral-300 focus:outline-none focus:z-10 text-sm text-neutral-900 focus:ring-primary-500 focus:border-primary-500 ${type === 'select' ? 'pr-10' : ''} ${className} ${
     error ? 'border-error-500 focus:ring-error-500 focus:border-error-500' : ''
   }`;
 
@@ -47,10 +47,12 @@ const FormInput = forwardRef<HTMLInputElement | HTMLSelectElement, FormInputProp
             className={commonClasses}
             {...props}
             aria-placeholder={props.placeholder}
+            value={props.value ?? ''}
+            style={!props.value ? { color: '#737373' } : {}}
           >
-          <option value="">{props.placeholder || `Select ${label.toLowerCase()}`}</option>
+          <option value="" style={{ color: '#737373' }}>{props.placeholder || `Select ${label.toLowerCase()}`}</option>
           {props.options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} className="text-neutral-900">
               {option.label}
             </option>
           ))}

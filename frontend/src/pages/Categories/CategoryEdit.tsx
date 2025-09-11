@@ -41,6 +41,7 @@ export const CategoryEdit = () => {
 
       setIsSubmitting(true);
       await categoriesCollection.update(category.id.toString(), (draft) => {
+        draft.icon = formData.icon;
         draft.name = formData.name;
         draft.parent_id = formData.parent_id;
       });

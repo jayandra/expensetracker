@@ -85,7 +85,7 @@ class CategoriesController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def category_params
-      params.expect(category: [ :name, :parent_id ])
+      params.expect(category: [ :icon, :name, :parent_id ])
     end
 
     def update_position_params

@@ -5,7 +5,8 @@ export const categorySchema = z.object({
   name: z.string(),
   parent_id: z.number().nullable(),
   user_id: z.number(),
-  position: z.number().nullable()
+  position: z.number().nullable(),
+  icon: z.string().nullable()
 });
 
 export const expenseSchema = z.object({
