@@ -24,7 +24,20 @@ export default function Layout({ children, header }: LayoutProps) {
     if (path === '/') {
       return location.pathname === '/';
     }
-    return location.pathname == path;
+    if (path === '/categories') {
+      return (
+        location.pathname === '/categories' ||
+        location.pathname === '/categories/new' ||
+        /^\/categories\/\d+\/edit$/.test(location.pathname)
+      );
+    }
+    if (path === '/expenses') {
+      return (
+        location.pathname === '/expenses' ||
+        /^\/expenses\/\d+\/edit$/.test(location.pathname)
+      );
+    }
+    return location.pathname === path;
   };
 
   const navItems: NavItem[] = [
