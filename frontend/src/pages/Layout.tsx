@@ -4,7 +4,8 @@ import HomeIcon from '@mui/icons-material/Home';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
 import AddIcon from '@mui/icons-material/Add';
 import PieChartIcon from '@mui/icons-material/PieChart';
-import SettingsIcon from '@mui/icons-material/Settings';
+import LogoutIcon from '@mui/icons-material/Logout';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavItem {
   path: string;
@@ -19,6 +20,7 @@ interface LayoutProps {
 
 export default function Layout({ children, header }: LayoutProps) {
   const location = useLocation();
+  const { logout } = useAuth();
   
   const isActive = (path: string) => {
     if (path === '/') {
@@ -45,8 +47,13 @@ export default function Layout({ children, header }: LayoutProps) {
     { path: '/expenses', icon: <ReceiptIcon fontSize={isActive('/expenses') ? 'large' : 'medium'} />, label: 'Expenses' },
     { path: '/expenses/new', icon: <AddIcon fontSize={isActive('/expenses/new') ? 'large' : 'medium'} />, label: 'Add' },
     { path: '/categories', icon: <PieChartIcon fontSize={isActive('/categories') ? 'large' : 'medium'} />, label: 'Categories' },
-    { path: '/settings', icon: <SettingsIcon fontSize={isActive('/settings') ? 'large' : 'medium'} />, label: 'Settings' },
+    { path: '#', icon: <LogoutIcon fontSize="medium" />, label: 'Logout' },
   ];
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    await logout();
+  };
 
   return (
     <div className="min-h-screen min-w-[320px] flex flex-col bg-gray-50">
@@ -75,8 +82,9 @@ export default function Layout({ children, header }: LayoutProps) {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center flex-1 h-full ${
-                  isActive(item.path) ? 'text-primary-600' : 'text-gray-500'
+                onClick={item.path === '#' ? handleLogout : undefined}
+                className={`flex flex-col items-center justify-center flex-1 h-full cursor-pointer ${
+                  isActive(item.path) && item.path !== '#' ? 'text-primary-600' : 'text-gray-500'
                 }`}
               >
                 {index === 2 ? (
