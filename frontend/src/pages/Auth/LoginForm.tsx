@@ -36,6 +36,7 @@ const LoginForm = () => {
         <div className="space-y-4">
           <FormInput
             label=""
+            id="email_address"
             name="email"
             type="email"
             autoComplete="email"
@@ -47,6 +48,7 @@ const LoginForm = () => {
           
           <FormInput
             label=""
+            id="password"
             name="password"
             type="password"
             autoComplete="current-password"

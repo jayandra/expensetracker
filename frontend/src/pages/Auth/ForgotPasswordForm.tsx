@@ -50,6 +50,7 @@ const ForgotPasswordForm = () => {
           <div className="space-y-4">
             <FormInput
               label=""
+              id="email_address"
               name="email"
               type="email"
               autoComplete="email"
