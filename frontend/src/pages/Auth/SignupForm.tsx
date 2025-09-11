@@ -53,7 +53,7 @@ const SignupForm = () => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <FormInput
-            label="Email address"
+            label=""
             name="email"
             type="email"
             autoComplete="email"
@@ -64,7 +64,7 @@ const SignupForm = () => {
           />
           
           <FormInput
-            label="Password"
+            label=""
             name="password"
             type="password"
             autoComplete="new-password"
@@ -75,7 +75,7 @@ const SignupForm = () => {
           />
           
           <FormInput
-            label="Confirm Password"
+            label=""
             name="password_confirmation"
             type="password"
             autoComplete="new-password"

@@ -106,7 +106,7 @@ const ResetPasswordForm = () => {
           
           <div className="space-y-4">
             <FormInput
-              label="New Password"
+              label=""
               name="password"
               type="password"
               autoComplete="new-password"
@@ -117,7 +117,7 @@ const ResetPasswordForm = () => {
             />
             
             <FormInput
-              label="Confirm New Password"
+              label=""
               name="password_confirmation"
               type="password"
               autoComplete="new-password"
