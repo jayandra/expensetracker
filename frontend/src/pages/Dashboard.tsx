@@ -3,7 +3,8 @@ import Layout from './Layout';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from '@tanstack/react-db';
 import { and, gte, lte, eq } from '@tanstack/db'
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format } from 'date-fns';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { formatDate } from '../utils/dateUtils';
 import { ExpenseItem } from './Expenses/ExpenseItem';
 import { emitError } from '../services/errorBus';
 import ReceiptIcon from '@mui/icons-material/ReceiptLong';
@@ -45,6 +46,9 @@ const Dashboard = () => {
     isError
   } = useLiveQuery(
     (q) => {
+      const startDate = formatDate(dateRange.start);
+      const endDate = formatDate(dateRange.end);
+
       const query = q
         .from({ expenses: expensesCollection })
         .join(
@@ -54,8 +58,8 @@ const Dashboard = () => {
         )
         .where(({ expenses }) =>
           and(
-            gte(expenses.date, dateRange.start.toISOString()),
-            lte(expenses.date, dateRange.end.toISOString())
+            gte(expenses.date, startDate),
+            lte(expenses.date, endDate)
           )
         )
         .orderBy(({ expenses }) => expenses.date, 'desc');
@@ -65,7 +69,7 @@ const Dashboard = () => {
         category: categories
       }));
     },
-    [selectedPeriod, dateRange.start.toISOString(), dateRange.end.toISOString()]
+    [selectedPeriod, dateRange.start, dateRange.end]
   );
 
 
