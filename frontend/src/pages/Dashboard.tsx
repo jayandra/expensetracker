@@ -177,7 +177,9 @@ const Dashboard = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-neutral-900">Top Expense Categories</h2>
-                <button className="text-xs text-primary-600">See All</button>
+                <Link to="/categories" className="text-xs text-primary-600 hover:text-primary-700">
+                  See All
+                </Link>
               </div>
               <div className="space-y-4">
                 {expenseSummary.slice(0,5).map((item, index) => {
