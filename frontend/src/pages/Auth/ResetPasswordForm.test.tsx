@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ResetPasswordForm from './ResetPasswordForm';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import axios from 'axios';
-import { AuthService } from '../../services/auth/auth.service';
 
 const mockAxiosGet = vi.fn();
 const mockResetPassword = vi.fn();

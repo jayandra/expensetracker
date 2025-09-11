@@ -26,7 +26,7 @@ const SignupForm = () => {
 
     try {
       setIsLoading(true);
-      await AuthService.signup({ email, password, password_confirmation: passwordConfirmation });
+      await AuthService.signup({ email_address: email, password, password_confirmation: passwordConfirmation });
       // After signup, log the user in to establish session/context
       await login(email, password);
       navigate('/dashboard');

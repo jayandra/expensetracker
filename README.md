@@ -44,7 +44,3 @@ When a user signs up, a default set of categories is pre-populated to help them 
 - The app uses SolidQueue for background jobs.
 - The `mission-control-jobs` gem is included to provide an interactive dashboard for queue status. You can access this dashboard at `<your-app-domain>/admin/jobs`.
 - HTTP Basic Auth credentials for this dashboard can be viewed by running `rails credentials:show` or updated by running `rails credentials:edit`
-
-### PWA
-
-ExpenseTracker can be installed to your mobile as PWA. Simply open the app in a browser and you’ll be prompted to install it.

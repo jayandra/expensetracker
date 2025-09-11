@@ -3,14 +3,18 @@ import * as Popover from '@radix-ui/react-popover';
 import { Icon, ICONS } from '../ui/Icon';
 
 // Simple button component
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  size?: 'default' | 'icon';
+  variant?: 'outline' | 'solid' | 'ghost';
+}
+
 const Button = ({ 
   className, 
-  size = 'default', 
+  size = 'default',
+  variant = 'outline',
   children, 
   ...props 
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { 
-  size?: 'default' | 'icon';
-}) => {
+}: ButtonProps) => {
   const baseClasses = 'appearance-none relative block w-full min-w-full px-3 py-2 border border-neutral-300 focus:outline-none focus:z-10 text-sm text-neutral-900 focus:ring-primary-500 focus:border-primary-500';
   const sizeClasses = {
     default: 'h-10',
@@ -19,7 +23,7 @@ const Button = ({
 
   return (
     <button
-      className={`${baseClasses} ${sizeClasses[size]} ${className || ''}`}
+      className={`${baseClasses} ${sizeClasses[size]} ${variant ? `variant-${variant}` : ''} ${className || ''}`}
       {...props}
     >
       {children}

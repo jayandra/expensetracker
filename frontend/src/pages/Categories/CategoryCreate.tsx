@@ -51,7 +51,8 @@ export default function CategoryCreate() {
         name: '', 
         parent_id: null,
         user_id: user?.id || 0, // This will be overridden in handleSubmit
-        position: 0 // This will be overridden in handleSubmit
+        position: 0, // This will be overridden in handleSubmit
+        icon: null
       }}
       onSubmit={handleSubmit}
       header={header}
