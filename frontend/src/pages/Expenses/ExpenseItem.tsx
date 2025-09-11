@@ -3,10 +3,11 @@ import { type Expense } from '../../types/models';
 import { categoriesCollection, expensesCollection } from '../../db';
 import { useNavigate } from 'react-router-dom';
 import { emitError } from '../../services/errorBus';
+import { Icon } from '../../components/ui/Icon';
 
 export const ExpenseItem = (transaction: Expense) => {
   const navigate = useNavigate();
-  const isIncome = transaction.amount >= 0;
+  const isIncome = true;  // TODO: Add the ability to set a cateogy as income or expense type
   
   // Get the category directly from the cached collection
   const { data: categories } = useLiveQuery(
@@ -38,10 +39,16 @@ export const ExpenseItem = (transaction: Expense) => {
 
   return (
     <div className="group flex items-center bg-white rounded-xl p-3 shadow-sm hover:bg-neutral-200">
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center md:mr-3 ${
+      <div className={`w-12 h-10 rounded-full flex items-center justify-center md:mr-10 text-md font-medium ${
         isIncome ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
       }`}>
-        {isIncome ? '↑' : '↓'}
+        {category?.icon ? (
+          <Icon name={category.icon} className="text-neutral-500" size="md" />
+        ) : category?.name ? (
+          <span>{category.name.charAt(0).toUpperCase()}</span>
+        ) : (
+          <span>?</span>
+        )}
       </div>
       <div className="flex-1 md:mr-3">
         <div className="font-medium">{transaction.description || 'Untitled'}</div>

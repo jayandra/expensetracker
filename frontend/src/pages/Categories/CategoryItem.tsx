@@ -5,6 +5,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { useNavigate } from 'react-router-dom';
 import { emitError } from '../../services/errorBus';
 import { categoriesCollection } from '../../db';
+import { Icon } from '../../components/ui/Icon';
 
 export interface CategoryWithChildren extends Category {
   children?: CategoryWithChildren[];
@@ -24,6 +25,7 @@ export function CategoryItem({
   onToggle,
 }: CategoryItemProps) {
   const navigate = useNavigate();
+  const isIncome = true;  // TODO: Add the ability to set a cateogy as income or expense type
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -60,7 +62,21 @@ export function CategoryItem({
             ) : (
             <div className="w-2 h-10" />
         )}
-        <span className="font-medium">{category.name}</span>
+        <div className="flex items-center gap-2">
+          <div className={`w-12 h-10 rounded-full flex items-center justify-center md:mr-10 text-md font-medium ${
+            isIncome ? 'bg-success-50 text-success-600' : 'bg-error-50 text-error-600'
+          }`}>
+            {category?.icon ? (
+              <Icon name={category.icon} className="text-neutral-500" size="md" />
+            ) : category?.name ? (
+              <span>{category.name.charAt(0).toUpperCase()}</span>
+            ) : (
+              <span>?</span>
+            )}
+          </div>
+
+          <span className="font-medium">{category.name}</span>
+        </div>
       </div>
 
       <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-200">

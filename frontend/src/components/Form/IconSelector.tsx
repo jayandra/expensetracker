@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Popover from '@radix-ui/react-popover';
+import { Icon, ICONS } from '../ui/Icon';
 
 // Simple button component
 const Button = ({ 
@@ -25,32 +26,6 @@ const Button = ({
     </button>
   );
 };
-
-// Whitelist of commonly used Material Icons for categories
-const ICONS = [
-  'shopping_cart',
-  'restaurant',
-  'local_grocery_store',
-  'fastfood',
-  'local_cafe',
-  'directions_car',
-  'home',
-  'flight',
-  'hotel',
-  'local_hospital',
-  'fitness_center',
-  'school',
-  'work',
-  'shopping_bag',
-  'receipt',
-  'account_balance',
-  'savings',
-  'credit_card',
-  'payments',
-  'attach_money',
-  'receipt_long',
-  'account_balance_wallet'
-];
 
 export interface IconSelectorProps {
   value: string;
@@ -88,7 +63,7 @@ export const IconSelector = ({ value, onChange, className, id }: IconSelectorPro
             <div className="flex items-center justify-between w-full">
               {value ? (
                 <div className="flex items-center gap-2">
-                  <span className="material-icons-outlined">{value}</span>
+                  <Icon name={value} className="text-lg text-neutral-900" />
                 </div>
               ) : (
                 <span className="text-neutral-500">Select an icon...</span>
@@ -107,8 +82,8 @@ export const IconSelector = ({ value, onChange, className, id }: IconSelectorPro
         </Popover.Trigger>
       </div>
       <Popover.Portal>
-        <Popover.Content className="z-50 min-w-[200px] rounded-md border bg-white p-2 shadow-md" align="start">
-          <div className="grid grid-cols-5 gap-2">
+        <Popover.Content className="z-50 min-w-[220px] rounded-md border bg-white p-2 shadow-md" align="start">
+          <div className="grid grid-cols-6 gap-2">
             {ICONS.map((icon) => (
               <button
                 key={icon}
@@ -121,7 +96,7 @@ export const IconSelector = ({ value, onChange, className, id }: IconSelectorPro
                 }}
                 title={icon}
               >
-                <span className="material-icons-outlined">{icon}</span>
+                <Icon name={icon} className="text-lg" />
                 <span className="sr-only">{icon}</span>
               </button>
             ))}
