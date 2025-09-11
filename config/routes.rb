@@ -21,7 +21,12 @@ Rails.application.routes.draw do
   get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  root "expenses#index"
+  root "react#index"
+
+  # Handle all other routes to React
+  get "*path", to: "react#index", constraints: ->(req) do
+    !req.xhr? && req.format.html?
+  end
 
   mount MissionControl::Jobs::Engine, at: "/admin/jobs"
 end
