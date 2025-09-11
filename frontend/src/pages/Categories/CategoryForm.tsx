@@ -26,7 +26,7 @@ export const CategoryForm = ({
 }: CategoryFormProps) => {
   const { user } = useAuth();
   const [isParentCategoryFocused, setIsParentCategoryFocused] = useState(false);
-  const [category, setCategory] = useState(initialCategory);
+  const [category, setCategory] = useState(initialCategory || { name: '', parent_id: null });
   
   const { data: allCategories = [] } = useLiveQuery(
     (q) => q.from({ categories: categoriesCollection }).select(({ categories }) => ({
@@ -37,7 +37,7 @@ export const CategoryForm = ({
 
   // Filter out the current category when editing to prevent circular references
   const categories = useMemo(() => {
-    if (isEditing && 'id' in initialCategory) {
+    if (isEditing && initialCategory && 'id' in initialCategory) {
       const currentId = (initialCategory as Category).id;
       return allCategories.filter(cat => cat.id !== null && cat.id !== undefined && cat.id !== currentId);
     }

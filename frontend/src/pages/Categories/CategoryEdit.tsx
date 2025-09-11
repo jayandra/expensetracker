@@ -11,7 +11,7 @@ export const CategoryEdit = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  const { data: categories } = useLiveQuery((q) =>
+  const { data: categories, isLoading } = useLiveQuery((q) =>
     q.from({ c: categoriesCollection })
       .where(({ c }) => eq(c.id, parseInt(id || '0')))
       .select(({ c }) => ({ ...c }))
@@ -19,11 +19,15 @@ export const CategoryEdit = () => {
   const category = categories?.[0];
 
   useEffect(() => {
-    if (id && categories && categories.length === 0) {
+    if (!isLoading && (!id || (categories && categories.length === 0))) {
       emitError('Category not found');
       navigate('/categories');
     }
-  }, [categories, id, navigate]);
+  }, [categories, id, navigate, isLoading]);
+
+  if (isLoading || !category) {
+    return <div>Loading...</div>; // Or a proper loading spinner
+  }
 
   const handleSubmit = async (formData: NewCategoryInput) => {
     try {
