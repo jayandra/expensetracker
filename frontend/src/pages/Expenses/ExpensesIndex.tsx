@@ -56,8 +56,8 @@ const ExpensesIndex = () => {
       q.from({ e: expensesCollection })
        .where(({ e }) => 
          and(
-           gte(e.date, dateRange.startDate),
-           lte(e.date, dateRange.endDate)
+           gte(e.date as unknown as string, dateRange.startDate),
+           lte(e.date as unknown as string, dateRange.endDate)
          )
       )
       .orderBy(({ e }) => e.date, 'desc'),

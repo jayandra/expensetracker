@@ -50,19 +50,21 @@ const Dashboard = () => {
       const endDate = formatDate(dateRange.end);
 
       const query = q
-        .from({ expenses: expensesCollection })
-        .join(
-          { categories: categoriesCollection },
-          ({ expenses, categories }) => eq(expenses.category_id, categories.id),
-          'inner'
+      .from({ expenses: expensesCollection })
+      .join(
+        { categories: categoriesCollection },
+        ({ expenses, categories }) => 
+          eq(expenses.category_id as unknown as string, categories.id as unknown as string),
+        'inner'
+      )
+      .where(({ expenses }) =>
+        and(
+          //  forget the current type and treat it as a string
+          gte(expenses.date as unknown as string, startDate),
+          lte(expenses.date as unknown as string, endDate)
         )
-        .where(({ expenses }) =>
-          and(
-            gte(expenses.date, startDate),
-            lte(expenses.date, endDate)
-          )
-        )
-        .orderBy(({ expenses }) => expenses.date, 'desc');
+      )
+      .orderBy(({ expenses }) => expenses.date, 'desc');
 
       return query.select(({ expenses, categories }) => ({
         ...expenses,
