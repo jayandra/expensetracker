@@ -23,14 +23,21 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
+    BUNDLE_WITHOUT="development" \
+    NODE_ENV=production \
+    RAILS_SERVE_STATIC_FILES=true
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems and frontend
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git pkg-config libyaml-dev libpq-dev && \
+    # Install Node.js 20.x and Yarn 1.22.17 (matching local environment)
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn@1.22.17 && \
+    yarn set version 1.22.17 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
@@ -38,6 +45,19 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
+
+# Install Node deps & build frontend
+COPY frontend /frontend-dist
+
+# Configure Yarn and install all dependencies including devDependencies
+RUN cd /frontend-dist && \
+    yarn config set enableGlobalCache true && \
+    yarn install --mode=update-lockfile --network-timeout 100000 && \
+    yarn install --network-timeout 100000 && \
+    # Install dev dependencies needed for TypeScript type checking
+    yarn install --production=false --network-timeout 100000 && \
+    # Build the frontend
+    yarn build
 
 # Copy application code
 COPY . .
@@ -62,6 +82,7 @@ RUN apt-get update -qq && \
 # Copy built artifacts: gems, application
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
+COPY --from=build /frontend-dist/* /rails/public/react/
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
