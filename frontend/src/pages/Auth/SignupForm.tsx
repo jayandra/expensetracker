@@ -29,7 +29,7 @@ const SignupForm = () => {
       await AuthService.signup({ email_address: email, password, password_confirmation: passwordConfirmation });
       // After signup, log the user in to establish session/context
       await login(email, password);
-      navigate('/dashboard');
+      navigate('/react/dashboard');
     } finally {
       setIsLoading(false);
     }
@@ -42,7 +42,7 @@ const SignupForm = () => {
         <>
           <span className="text-neutral-600">Already have an account? </span>
           <Link
-            to="/login"
+            to="/react/login"
             className="font-medium text-primary-600 hover:text-primary-500"
           >
             Sign in

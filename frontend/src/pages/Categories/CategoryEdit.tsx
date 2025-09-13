@@ -21,7 +21,7 @@ export const CategoryEdit = () => {
   useEffect(() => {
     if (!isLoading && (!id || (categories && categories.length === 0))) {
       emitError('Category not found');
-      navigate('/categories');
+      navigate('/react/categories');
     }
   }, [categories, id, navigate, isLoading]);
 
@@ -46,7 +46,7 @@ export const CategoryEdit = () => {
         draft.parent_id = formData.parent_id;
       });
       
-      navigate('/categories');
+      navigate('/react/categories');
     } catch (error) {
       emitError(error);
       throw error;

@@ -23,30 +23,32 @@ export default function Layout({ children, header }: LayoutProps) {
   const { logout } = useAuth();
   
   const isActive = (path: string) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    if (path === '/categories') {
-      return (
-        location.pathname === '/categories' ||
-        location.pathname === '/categories/new' ||
-        /^\/categories\/\d+\/edit$/.test(location.pathname)
+    if (path === '/react') {
+      return (location.pathname === '/react' ||
+        location.pathname === '/react/dashboard'
       );
     }
-    if (path === '/expenses') {
+    if (path === '/react/categories') {
       return (
-        location.pathname === '/expenses' ||
-        /^\/expenses\/\d+\/edit$/.test(location.pathname)
+        location.pathname === '/react/categories' ||
+        location.pathname === '/react/categories/new' ||
+        /^\/react\/categories\/\d+\/edit$/.test(location.pathname)
+      );
+    }
+    if (path === '/react/expenses') {
+      return (
+        location.pathname === '/react/expenses' ||
+        /^\/react\/expenses\/\d+\/edit$/.test(location.pathname)
       );
     }
     return location.pathname === path;
   };
 
   const navItems: NavItem[] = [
-    { path: '/', icon: <HomeIcon fontSize={isActive('/') ? 'large' : 'medium'} />, label: 'Home' },
-    { path: '/expenses', icon: <ReceiptIcon fontSize={isActive('/expenses') ? 'large' : 'medium'} />, label: 'Expenses' },
-    { path: '/expenses/new', icon: <AddIcon fontSize={isActive('/expenses/new') ? 'large' : 'medium'} />, label: 'Add' },
-    { path: '/categories', icon: <PieChartIcon fontSize={isActive('/categories') ? 'large' : 'medium'} />, label: 'Categories' },
+    { path: '/react', icon: <HomeIcon fontSize={isActive('/react') ? 'large' : 'medium'} />, label: 'Home' },
+    { path: '/react/expenses', icon: <ReceiptIcon fontSize={isActive('/react/expenses') ? 'large' : 'medium'} />, label: 'Expenses' },
+    { path: '/react/expenses/new', icon: <AddIcon fontSize={isActive('/react/expenses/new') ? 'large' : 'medium'} />, label: 'Add' },
+    { path: '/react/categories', icon: <PieChartIcon fontSize={isActive('/react/categories') ? 'large' : 'medium'} />, label: 'Categories' },
     { path: '#', icon: <LogoutIcon fontSize="medium" />, label: 'Logout' },
   ];
 

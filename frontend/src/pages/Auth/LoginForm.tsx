@@ -22,7 +22,7 @@ const LoginForm = () => {
         <>
           <span className="text-neutral-600">Don't have an account? </span>
           <Link
-            to="/signup"
+            to="/react/signup"
             className="font-medium text-primary-600 hover:text-primary-500"
           >
             Sign up
@@ -62,7 +62,7 @@ const LoginForm = () => {
         <div className="flex items-center justify-end">
           <div className="text-sm">
             <Link
-              to="/forgot-password"
+              to="/react/forgot-password"
               className="font-medium text-primary-600 hover:text-primary-500"
             >
               Forgot your password?

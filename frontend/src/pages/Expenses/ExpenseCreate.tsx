@@ -31,7 +31,7 @@ export const ExpenseCreate = () => {
       };
       
       await expensesCollection.insert(tempExpense);
-      navigate('/expenses');
+      navigate('/react/expenses');
     } catch (error) {
       emitError(error);
       throw error;

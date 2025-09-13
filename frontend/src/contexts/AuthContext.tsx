@@ -56,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       setUser({ id: user.id, email: user.email });
-      navigate('/dashboard');
+      navigate('/react/dashboard');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await AuthService.logout();
       setUser(null);
-      navigate('/login');
+      navigate('/react/login');
     } finally {
       setLoading(false);
     }

@@ -20,7 +20,7 @@ export const ExpenseEdit = () => {
   useEffect(() => {
     if (id && expenses && expenses.length === 0) {
       emitError('Expense not found');
-      navigate('/expenses');
+      navigate('/react/expenses');
     }
   }, [expenses, id, expense]);
 
@@ -42,7 +42,7 @@ export const ExpenseEdit = () => {
         draft.category_id = formData.category_id;
       });
       
-      navigate('/expenses');
+      navigate('/react/expenses');
     } catch (error) {
       emitError(error);
       throw error;

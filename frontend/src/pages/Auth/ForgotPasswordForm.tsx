@@ -35,7 +35,7 @@ const ForgotPasswordForm = () => {
       footer={
         <>
           <span className="text-neutral-600">Remember your password? </span>
-          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-500">
+          <Link to="/react/login" className="font-medium text-primary-600 hover:text-primary-500">
             Back to login
           </Link>
         </>

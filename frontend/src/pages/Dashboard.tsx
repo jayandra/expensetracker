@@ -183,7 +183,7 @@ const Dashboard = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-lg font-semibold text-neutral-900">Top Expense Categories</h2>
-                <Link to="/categories" className="text-xs text-primary-600 hover:text-primary-700">
+                <Link to="/react/categories" className="text-xs text-primary-600 hover:text-primary-700">
                   See All
                 </Link>
               </div>
@@ -220,7 +220,7 @@ const Dashboard = () => {
           {/* Recent Transactions */}
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-lg font-semibold text-neutral-900">Recent Expenses</h2>
-            <Link to="/expenses" className="text-xs text-primary-600 hover:text-primary-700">
+            <Link to="/react/expenses" className="text-xs text-primary-600 hover:text-primary-700">
               See All
             </Link>
           </div>

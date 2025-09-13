@@ -28,7 +28,7 @@ export default function CategoryCreate() {
       };
       
       await categoriesCollection.insert(tempCategory);
-      navigate('/categories');
+      navigate('/react/categories');
     } catch (error) {
       emitError('Failed to create category. Please try again.');
       throw error;

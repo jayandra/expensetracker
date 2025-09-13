@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute = ({ 
-  redirectPath = '/login',
+  redirectPath = '/react/login',
   children,
 }: ProtectedRouteProps) => {
   const { isAuthenticated, loading } = useAuth();

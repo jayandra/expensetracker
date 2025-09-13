@@ -83,7 +83,7 @@ export default function CategoriesIndex() {
   };
 
   const addCategory = () => {
-    navigate('/categories/new');
+    navigate('/react/categories/new');
   };
 
   

@@ -22,56 +22,56 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/signup" element={<SignupForm />} />
-          <Route path="/forgot-password" element={<ForgotPasswordForm />} />
-          <Route path="/passwords/:token/edit" element={<ResetPasswordForm />} />
-          <Route path="/colors" element={<ColorPalette />} />
+          <Route path="/react/login" element={<LoginForm />} />
+          <Route path="/react/signup" element={<SignupForm />} />
+          <Route path="/react/forgot-password" element={<ForgotPasswordForm />} />
+          <Route path="/react/passwords/:token/edit" element={<ResetPasswordForm />} />
+          <Route path="/react/colors" element={<ColorPalette />} />
           
           {/* Protected routes */}
-          <Route path="/" element={
+          <Route path="/react" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           } />
-          <Route path="/dashboard" element={
+          <Route path="/react/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
           } />
-          <Route path="/expenses" element={
+          <Route path="/react/expenses" element={
             <ProtectedRoute>
               <ExpensesIndex />
             </ProtectedRoute>
           } />
-          <Route path="/expenses/new" element={
+          <Route path="/react/expenses/new" element={
             <ProtectedRoute>
               <ExpenseCreate />
             </ProtectedRoute>
           } />
-          <Route path="/expenses/:id/edit" element={
+          <Route path="/react/expenses/:id/edit" element={
             <ProtectedRoute>
               <ExpenseEdit />
             </ProtectedRoute>
           } />
-          <Route path="/categories" element={
+          <Route path="/react/categories" element={
             <ProtectedRoute>
               <CategoriesIndex />
             </ProtectedRoute>
           } />
-          <Route path="/categories/new" element={
+          <Route path="/react/categories/new" element={
             <ProtectedRoute>
               <CategoryCreate />
             </ProtectedRoute>
           } />
-          <Route path="/categories/:id/edit" element={
+          <Route path="/react/categories/:id/edit" element={
             <ProtectedRoute>
               <CategoryEdit />
             </ProtectedRoute>
           } />
           
           {/* Fallback route */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/react" replace />} />
         </Routes>
       </AuthProvider>
     </Router>

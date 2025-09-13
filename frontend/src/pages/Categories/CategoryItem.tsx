@@ -29,7 +29,7 @@ export function CategoryItem({
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigate(`/categories/${category.id}/edit`);
+    navigate(`/react/categories/${category.id}/edit`);
   };
   
   const handleDelete = async (e: React.MouseEvent) => {

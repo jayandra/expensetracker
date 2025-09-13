@@ -19,7 +19,7 @@ export const ExpenseItem = (transaction: Expense) => {
   const category = categories?.find(cat => cat.id === transaction.category_id);
   
   const handleEdit = () => {
-    navigate(`/expenses/${transaction.id}/edit`);
+    navigate(`/react/expenses/${transaction.id}/edit`);
   };
   
   const handleDelete = async (e: React.MouseEvent) => {

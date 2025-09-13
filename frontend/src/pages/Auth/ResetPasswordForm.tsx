@@ -54,7 +54,7 @@ const ResetPasswordForm = () => {
 
       setMessage('Your password has been reset successfully. Redirecting to login...');
       setTimeout(() => {
-        navigate('/login');
+        navigate('/react/login');
       }, 3000);
     } finally {
       setIsLoading(false);
@@ -75,7 +75,7 @@ const ResetPasswordForm = () => {
         title="Invalid Link"
         subtitle={error}
         footer={
-          <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+          <Link to="/react/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
             Request a new password reset link
           </Link>
         }
