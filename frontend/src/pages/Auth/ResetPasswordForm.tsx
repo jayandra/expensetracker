@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthService } from '../../services/auth/auth.service';
 import FormContainer from '../../components/Form/FormContainer';
@@ -75,9 +75,9 @@ const ResetPasswordForm = () => {
         title="Invalid Link"
         subtitle={error}
         footer={
-          <a href="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
+          <Link to="/forgot-password" className="font-medium text-primary-600 hover:text-primary-500">
             Request a new password reset link
-          </a>
+          </Link>
         }
       >
         <div className="text-center">
