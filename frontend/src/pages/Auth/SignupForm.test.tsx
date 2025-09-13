@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/dom';
 import SignupForm from './SignupForm';
 import { AuthService } from '../../services/auth/auth.service';
 import * as AuthCtx from '../../contexts/AuthContext';

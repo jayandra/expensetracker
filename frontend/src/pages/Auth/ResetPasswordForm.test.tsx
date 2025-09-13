@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/dom';
 import ResetPasswordForm from './ResetPasswordForm';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 

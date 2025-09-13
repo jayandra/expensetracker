@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, renderHook, act } from '@testing-library/react';
+import { render, screen, renderHook, act } from '@testing-library/react';
+import { waitFor } from '@testing-library/dom';
 import { AuthProvider, useAuth } from './AuthContext';
 import { AuthService } from '../services/auth/auth.service';
 import { MemoryRouter } from 'react-router-dom';

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { fireEvent } from '@testing-library/dom';
 import LoginForm from './LoginForm';
 import * as AuthCtx from '../../contexts/AuthContext';
 import { MemoryRouter } from 'react-router-dom';
