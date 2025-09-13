@@ -6,6 +6,12 @@ const GlobalErrorBanner = () => {
 
   useEffect(() => {
     if (!error) return;
+    
+    const timer = setTimeout(() => {
+      clearError();
+    }, 5000);
+    
+    return () => clearTimeout(timer);
   }, [error, clearError]);
 
   if (!error) return null;

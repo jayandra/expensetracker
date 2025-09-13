@@ -15,7 +15,7 @@ When a user signs up, a default set of categories is pre-populated to help them 
   rake db:create db:migrate db:seed
   foreman start -f procfile.dev
   ```
-
+- The React frontend is located in the `frontend` directory. The `foreman` command mentioned above will concurrently run both Rails and React development servers. 
 ### Configure mailer:
 
 - For simplicity, SMTP settings are been placed in `config/application.rb` and gets used across all environments.

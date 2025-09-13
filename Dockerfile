@@ -46,21 +46,22 @@ RUN bundle install && \
     rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     bundle exec bootsnap precompile --gemfile
 
-# Install Node deps & build frontend
-COPY frontend /frontend-dist
-
-# Configure Yarn and install all dependencies including devDependencies
-RUN cd /frontend-dist && \
-    yarn config set enableGlobalCache true && \
-    yarn install --mode=update-lockfile --network-timeout 100000 && \
-    yarn install --network-timeout 100000 && \
-    # Install dev dependencies needed for TypeScript type checking
-    yarn install --production=false --network-timeout 100000 && \
-    # Build the frontend
-    yarn build
-
 # Copy application code
 COPY . .
+
+# Build frontend
+RUN cd frontend && \
+    # Install all dependencies including devDependencies for building
+    yarn install --network-timeout 100000 --frozen-lockfile --ignore-optional && \
+    # Install TypeScript and other build tools
+    yarn add --dev typescript @types/node @vitejs/plugin-react vitest @testing-library/react @testing-library/jest-dom @testing-library/dom && \
+    # Build the frontend
+    NODE_ENV=production yarn build --mode production && \
+    # Create public directory and copy built files
+    mkdir -p ../public/react && \
+    cp -r dist/* ../public/react/ && \
+    # Clean up to reduce image size
+    rm -rf node_modules .cache .parcel-cache dist
 
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
@@ -82,7 +83,6 @@ RUN apt-get update -qq && \
 # Copy built artifacts: gems, application
 COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
 COPY --from=build /rails /rails
-COPY --from=build /frontend-dist/* /rails/public/react/
 
 # Run and own only the runtime files as a non-root user for security
 RUN groupadd --system --gid 1000 rails && \
