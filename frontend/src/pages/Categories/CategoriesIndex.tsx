@@ -88,9 +88,9 @@ export default function CategoriesIndex() {
 
   
   const header = (
-    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <div className="flex items-center justify-between">
       <h1 className="text-2xl font-bold text-neutral-900">Categories</h1>
-      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+      <div className="flex items-center gap-2">
         <button
           onClick={toggleAll}
           className="flex items-center gap-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -109,7 +109,7 @@ export default function CategoriesIndex() {
         </button>
         <button
           onClick={addCategory}
-          className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-sm font-medium"
+          className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors"
         >
           Add Category
         </button>
@@ -119,22 +119,27 @@ export default function CategoriesIndex() {
 
   return (
     <Layout header={header}>
-      <WrapperTile>
-        {categoryTree.length > 0 ? (
-          categoryTree.map(category => (
-            <div key={category.id} className="mb-2 last:mb-0">
-              <CategoryTree 
-                category={category} 
-                depth={0} 
-                expanded={expanded} 
-                onToggle={toggleCategory} 
-              />
-            </div>
-          ))
-        ) : (
-          <div className="text-gray-600">No categories found. Create your first category to get started.</div>
-        )}
-      </WrapperTile>
+      <div className="w-full">
+        <WrapperTile>
+          <div className="space-y-3">
+            {categoryTree && categoryTree.length > 0 ? (
+              categoryTree.map((category) => (
+                <CategoryTree
+                  key={category.id}
+                  category={category}
+                  depth={0}
+                  expanded={expanded}
+                  onToggle={toggleCategory}
+                />
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                No categories found. Create your first category to get started.
+              </div>
+            )}
+          </div>
+        </WrapperTile>
+      </div>
     </Layout>
   );
 }

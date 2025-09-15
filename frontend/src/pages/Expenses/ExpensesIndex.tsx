@@ -161,7 +161,8 @@ const ExpensesIndex = () => {
 
   return (
     <Layout header={header}>
-      <WrapperTile>
+      <div className="w-full">
+        <WrapperTile>
         <div className="bg-white rounded-xl shadow-sm p-4">
           <div className="flex items-center justify-between">
             <div>
@@ -192,6 +193,7 @@ const ExpensesIndex = () => {
           )}
         </div>
       </WrapperTile>
+      </div>
     </Layout>
   );
 };
