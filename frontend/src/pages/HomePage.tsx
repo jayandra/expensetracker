@@ -10,6 +10,9 @@ import LoginIcon from '@mui/icons-material/Login';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import Layout from './Layout';
 import WrapperTile from '../components/WrapperTile';
+import categoriesImage from '../assets/images/categories.png';
+import expensesImage from '../assets/images/expenses.png';
+import dashboardImage from '../assets/images/dashboard.png';
 
 const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
   <div className="bg-white rounded-xl p-6 h-full flex flex-col">
@@ -125,21 +128,21 @@ const HomePage = () => {
               <ScreenshotCard
                 title="1. Manage Categories"
                 description="Create and customize categories to organize your expenses exactly how you want."
-                imageUrl="../../../public/images/categories.png"
+                imageUrl={categoriesImage}
               />
             </Grid>
             <Grid size={{ sm: 12, md: 6 }}>
               <ScreenshotCard
                 title="2. Manage Expenses"
                 description="Create and categorize expenses by entering the amount, date and (or) a note."
-                imageUrl="../../../public/images/expenses.png"
+                imageUrl={expensesImage}
               />
             </Grid>
             <Grid size={{ sm:12, md:6 }}>
               <ScreenshotCard
                 title="3. View Your Dashboard"
                 description="See your spending patterns at a glance with our intuitive dashboard and charts."
-                imageUrl="../../../public/images/dashboard.png"
+                imageUrl={dashboardImage}
               />
             </Grid>
 
