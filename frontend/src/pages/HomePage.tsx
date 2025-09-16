@@ -164,15 +164,17 @@ const HomePage = () => {
               <p className="text-sm"><span className="font-medium">Email:</span> test@example.com</p>
               <p className="text-sm"><span className="font-medium">Password:</span> password123</p>
             </div>
-            <Link to="/react/login">
-              <Button 
-                variant="primary"
-                className="px-6 py-3 text-base"
-              >
-                <LoginIcon className="mr-2" />
-                Sign In with Test Account
-              </Button>
-            </Link>
+            <div className="flex justify-center">
+              <Link to="/react/login" className="inline-block">
+                <Button 
+                  variant="primary"
+                  className="px-6 py-2 text-base w-48"
+                >
+                  <LoginIcon className="mr-2" />
+                  Sign In with Test Account
+                </Button>
+              </Link>
+            </div>
           </div>
         </Container>
       </WrapperTile>
