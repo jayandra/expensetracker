@@ -49,6 +49,7 @@ class Category < ApplicationRecord
   def unique_name_for_user_and_parent
     scope_conditions = { user_id: user_id }
     scope_conditions[:parent_id] = parent_id if parent_id.present?
+    scope_conditions[:icon] = icon if icon.present?
 
     if self.class.exists?(scope_conditions.merge(name: name))
       errors.add(:name, "has already been taken")

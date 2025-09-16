@@ -89,6 +89,9 @@ export const ICON_NAMES = {
   DIRECTIONS_BOAT: 'directions_boat',
   FLIGHT: 'flight',
   DIRECTIONS_SUBWAY: 'directions_subway',
+  LOCAL_GAS_STATION: 'local_gas_station',
+  LOCAL_PARKING: 'local_parking',
+  CAR_REPAIR: 'car_repair',
 
   // Bills & Utilities
   HOUSE: 'house',
@@ -97,7 +100,9 @@ export const ICON_NAMES = {
   WIFI: 'wifi',
   PHONE_IPHONE: 'phone_iphone',
   TV: 'tv',
-
+  BUILD: 'build',
+  PLUMBING: 'plumbing',
+  
   // Entertainment
   MOVIE: 'movie',
   SPORTS_ESPORTS: 'sports_esports',
@@ -132,7 +137,6 @@ export const ICON_NAMES = {
 
   // Home & Personal
   HOME: 'home',
-  BUILD: 'build',
   LOCAL_LAUNDRY_SERVICE: 'local_laundry_service',
   PETS: 'pets',
   CHILD_CARE: 'child_care',
