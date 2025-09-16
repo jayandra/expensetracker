@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import HomePage from './pages/HomePage';
 import Dashboard from './pages/Dashboard';
 import ExpensesIndex from './pages/Expenses/ExpensesIndex';
 import LoginForm from './pages/Auth/LoginForm';
@@ -22,6 +23,7 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
+          <Route path="/react" element={<HomePage />} />
           <Route path="/react/login" element={<LoginForm />} />
           <Route path="/react/signup" element={<SignupForm />} />
           <Route path="/react/forgot-password" element={<ForgotPasswordForm />} />
@@ -29,7 +31,7 @@ function App() {
           <Route path="/react/colors" element={<ColorPalette />} />
           
           {/* Protected routes */}
-          <Route path="/react" element={
+          <Route path="/react/dashboard" element={
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
