@@ -23,14 +23,21 @@ RUN apt-get update -qq && \
 ENV RAILS_ENV="production" \
     BUNDLE_DEPLOYMENT="1" \
     BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development"
+    BUNDLE_WITHOUT="development" \
+    NODE_ENV=production \
+    RAILS_SERVE_STATIC_FILES=true
 
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems
+# Install packages needed to build gems and frontend
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git pkg-config libyaml-dev libpq-dev && \
+    # Install Node.js 20.x and Yarn 1.22.17 (matching local environment)
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g yarn@1.22.17 && \
+    yarn set version 1.22.17 && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
@@ -41,6 +48,20 @@ RUN bundle install && \
 
 # Copy application code
 COPY . .
+
+# Build frontend
+RUN cd frontend && \
+    # Install all dependencies including devDependencies for building
+    yarn install --network-timeout 100000 --frozen-lockfile --ignore-optional && \
+    # Install TypeScript and other build tools
+    yarn add --dev typescript @types/node @vitejs/plugin-react vitest @testing-library/react @testing-library/jest-dom @testing-library/dom && \
+    # Build the frontend
+    NODE_ENV=production yarn build --mode production && \
+    # Create public directory and copy built files
+    mkdir -p ../public/react && \
+    cp -r dist/* ../public/react/ && \
+    # Clean up to reduce image size
+    rm -rf node_modules .cache .parcel-cache dist
 
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/

@@ -15,7 +15,7 @@ When a user signs up, a default set of categories is pre-populated to help them 
   rake db:create db:migrate db:seed
   foreman start -f procfile.dev
   ```
-
+- The React frontend is located in the `frontend` directory. The `foreman` command mentioned above will concurrently run both Rails and React development servers. 
 ### Configure mailer:
 
 - For simplicity, SMTP settings are been placed in `config/application.rb` and gets used across all environments.
@@ -36,6 +36,14 @@ When a user signs up, a default set of categories is pre-populated to help them 
   ```
   kamal setup
   kamal deploy
+
+  # If not logged in, authenticate with AWS SSO and Docker:
+  # 1. Log in to AWS SSO
+  aws sso login --profile <your-profile-name>
+  
+  # 2. Authenticate Docker with AWS ECR
+  aws ecr-public get-login-password --region us-east-1 --profile <your-profile-name> | \
+    docker login --username AWS --password-stdin public.ecr.aws
   ```
   **NOTE**: If you want to deploy to ECS Fargate, refer [commit#637b49a](https://github.com/jayandra/expensetracker/commit/637b49a686f27b9d7fea75ea7c5e0f4b558b31b9) as starting point by revert it
 
@@ -44,7 +52,3 @@ When a user signs up, a default set of categories is pre-populated to help them 
 - The app uses SolidQueue for background jobs.
 - The `mission-control-jobs` gem is included to provide an interactive dashboard for queue status. You can access this dashboard at `<your-app-domain>/admin/jobs`.
 - HTTP Basic Auth credentials for this dashboard can be viewed by running `rails credentials:show` or updated by running `rails credentials:edit`
-
-### PWA
-
-ExpenseTracker can be installed to your mobile as PWA. Simply open the app in a browser and you’ll be prompted to install it.

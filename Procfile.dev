@@ -1,4 +1,5 @@
 web: bin/rails server -b 0.0.0.0 -p 3000
 css: bin/rails tailwindcss:watch
+vite: cd frontend && yarn dev
 jobs: bin/jobs
 postgres: LC_ALL="C" /usr/local/opt/postgresql@17/bin/postgres -D /usr/local/var/postgresql@17
