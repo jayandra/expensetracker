@@ -4,9 +4,11 @@ import { categoriesCollection, expensesCollection } from '../../db';
 import { useNavigate } from 'react-router-dom';
 import { emitError } from '../../services/errorBus';
 import { Icon } from '../../components/ui/Icon';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const ExpenseItem = (transaction: Expense) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const isIncome = true;  // TODO: Add the ability to set a cateogy as income or expense type
   
   // Get the category directly from the cached collection
@@ -24,6 +26,10 @@ export const ExpenseItem = (transaction: Expense) => {
   
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if(user?.demo_user){
+        emitError({message: 'Test accounts do not have permission to perform this action.'});
+        return;
+    }
     
     const confirmDelete = window.confirm('Are you sure you want to delete this expense?');
     if (!confirmDelete) return;

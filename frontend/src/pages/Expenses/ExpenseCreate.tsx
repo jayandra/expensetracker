@@ -20,6 +20,11 @@ export const ExpenseCreate = () => {
   };
 
   const handleSubmit = async (formData: NewExpenseInput) => {
+    if(user?.demo_user){
+      emitError({message: 'Test accounts do not have permission to perform this action.'});
+      return;
+    }
+    
     try {
       if (!formData.amount || !formData.date || !formData.category_id) {
         throw new Error('Missing required expense fields');

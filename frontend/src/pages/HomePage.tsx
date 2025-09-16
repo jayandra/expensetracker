@@ -161,7 +161,7 @@ const HomePage = () => {
                 So, please feel free to try out anything as it won't affect any data associated with the test account.
             </p>
             <div className="bg-gray-50 p-4 rounded-lg mb-6 max-w-md mx-auto text-left">
-              <p className="text-sm"><span className="font-medium">Email:</span> test@example.com</p>
+              <p className="text-sm"><span className="font-medium">Email:</span> demo_user@example.com</p>
               <p className="text-sm"><span className="font-medium">Password:</span> password123</p>
             </div>
             <div className="flex justify-center">

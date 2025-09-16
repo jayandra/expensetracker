@@ -7,6 +7,7 @@ import { AuthService } from '../services/auth/auth.service';
 interface User {
   id: number;
   email: string;
+  demo_user: boolean;
   // Add other user fields as needed
 }
 
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         const user = await AuthService.checkSession();
         if (user) {
-          setUser({ id: user.id, email: user.email });
+          setUser({ id: user.id, email: user.email, demo_user: user.email === 'demo_user@example.com' });
         }
       } catch (error: any) {
         // Silently ignore 401 (unauthenticated) during initial probe
@@ -55,7 +56,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emitError({ message: 'Invalid response from server' });
         return;
       }
-      setUser({ id: user.id, email: user.email });
+      setUser({ id: user.id, email: user.email, demo_user: user.email === 'demo_user@example.com' });
       navigate('/react/dashboard');
     } finally {
       setLoading(false);

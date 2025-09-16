@@ -1,4 +1,4 @@
-import type { User } from './types';
+import type { User, AuthResponse, LoginCredentials } from './types';
 import {
   login as apiLogin,
   signup as apiSignup,
@@ -15,11 +15,24 @@ import {
 // - JWT token management
 // - Session persistence logic
 export const AuthService = {
-  login: apiLogin,
+  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
+    const data = await apiLogin(credentials);
+    // Map email_address to email if needed
+    if (data.user && 'email_address' in data.user) {
+      const { email_address, ...rest } = data.user as any;
+      return { ...data, user: { ...rest, email: email_address } };
+    }
+    return data;
+  },
   signup: apiSignup,
   logout: apiLogout,
   checkSession: async (): Promise<User> => {
     const data = await apiCheckSession();
+    // Map email_address to email if needed
+    if (data.user && 'email_address' in data.user) {
+      const { email_address, ...rest } = data.user as any;
+      return { ...rest, email: email_address };
+    }
     return data.user;
   },
   requestPasswordReset: apiRequestPasswordReset,

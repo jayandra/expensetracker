@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { emitError } from '../../services/errorBus';
 import { categoriesCollection } from '../../db';
 import { Icon } from '../../components/ui/Icon';
+import { useAuth } from '../../contexts/AuthContext';
 
 export interface CategoryWithChildren extends Category {
   children?: CategoryWithChildren[];
@@ -24,6 +25,7 @@ export function CategoryItem({
   isExpanded,
   onToggle,
 }: CategoryItemProps) {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const isIncome = true;  // TODO: Add the ability to set a cateogy as income or expense type
 
@@ -34,6 +36,10 @@ export function CategoryItem({
   
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if(user?.demo_user){
+      emitError({message: 'Test accounts do not have permission to perform this action.'});
+      return;
+    }
     
     const confirmDelete = window.confirm('Are you sure you want to delete this category?');
     if (!confirmDelete) return;

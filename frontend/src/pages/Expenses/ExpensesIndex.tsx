@@ -6,9 +6,11 @@ import Layout from '../Layout';
 import { ExpenseItem } from '../Expenses/ExpenseItem';
 import { expensesCollection, updateExpenseCollection } from '../../db';
 import WrapperTile from '../../components/WrapperTile';
-import {formatDate, getCurrentMonthRange} from '../../utils'
+import { formatDate, getCurrentMonthRange } from '../../utils'
+import {useAuth} from '../../contexts/AuthContext';
 
 const ExpensesIndex = () => {
+  const { user } = useAuth();
   // Get min and max dates from the collection
   const { data: allExpenses = [] } = useLiveQuery(
     (q) => q.from({ e: expensesCollection })
@@ -16,6 +18,13 @@ const ExpensesIndex = () => {
 
   // Initialize date range for internal computation (stored as 'YYYY-MM-DD' strings)
   const [dateRange, setDateRange] = useState(() => {
+    if (user?.demo_user) {
+      return({
+        startDate: '2025-07-01',
+        endDate: '2025-07-31'
+      });
+    }
+
     const { firstDay, lastDay } = getCurrentMonthRange();
     const defaultStart = formatDate(firstDay);
     const defaultEnd = formatDate(lastDay);
@@ -82,8 +91,17 @@ const ExpensesIndex = () => {
   
   const applyDateRange = async () => {
     // Ensure start date is before or equal to end date
-    const startDate = selectedDates.start_date;
-    const endDate = selectedDates.end_date;
+    let startDate = selectedDates.start_date;
+    let endDate = selectedDates.end_date;
+
+    if (user?.demo_user) {
+      if (startDate < '2025-07-01') {
+        startDate = '2025-07-01';
+      }
+      if (endDate > '2025-07-31') {
+        endDate = '2025-07-31';
+      }
+    }
     
     if (startDate > endDate) {
       // Swap dates if they're in the wrong order

@@ -5,8 +5,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { emitError } from '../../services/errorBus';
 import { expensesCollection } from '../../db';
 import { useLiveQuery, eq } from '@tanstack/react-db';
+import {useAuth} from '../../contexts/AuthContext';
 
 export const ExpenseEdit = () => {
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -25,6 +27,11 @@ export const ExpenseEdit = () => {
   }, [expenses, id, expense]);
 
   const handleSubmit = async (formData: NewExpenseInput) => {
+    if(user?.demo_user){
+      emitError({message: 'Test accounts do not have permission to perform this action.'});
+      return;
+    }
+
     try {
       if (!expense?.id) {
         throw new Error('Expense ID is required for update');

@@ -7,6 +7,8 @@ class ExpensesController < ApplicationController
     # Apply date range filters if provided else default to current month
     start_date = params[:start_date].present? ? Date.parse(params[:start_date]) : Date.today.beginning_of_month
     end_date = params[:end_date].present? ? Date.parse(params[:end_date]) : Date.today.end_of_month
+    start_date = "2025-07-01" if Current.user.demo_user
+    end_date = "2025-07-31" if Current.user.demo_user
 
     @expenses = scoped_expenses.where("DATE(expenses.date) >= ? and DATE(expenses.date) <= ?", start_date, end_date)
   end

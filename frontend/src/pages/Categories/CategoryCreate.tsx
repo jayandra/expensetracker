@@ -16,6 +16,10 @@ export default function CategoryCreate() {
       emitError('User not authenticated');
       return;
     }
+    if(user?.demo_user){
+      emitError({message: 'Test accounts do not have permission to perform this action.'});
+      return;
+    }
 
     try {
       setIsSubmitting(true);

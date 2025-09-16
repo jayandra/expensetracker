@@ -12,13 +12,18 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { expensesCollection, categoriesCollection } from '../db';
 import type { Expense } from '../types/models';
 import WrapperTile from '../components/WrapperTile';
+import { useAuth } from '../contexts/AuthContext';
 
 const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState<'day' | 'week' | 'month'>('month');
+  const { user } = useAuth();
 
   // Calculate date range based on selected period
   const dateRange = useMemo(() => {
-    const now = new Date();
+    let now = new Date();
+    if (user?.demo_user) {
+      now = new Date('2025-07-02');
+    }
     
     switch (selectedPeriod) {
       case 'day':
