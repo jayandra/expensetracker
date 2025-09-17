@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import * as Popover from '@radix-ui/react-popover';
-import { Icon, ICONS } from '../ui/Icon';
+import { Icon, ICON_GROUPS } from '../ui/Icon';
 
 // Simple button component
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -87,23 +87,34 @@ export const IconSelector = ({ value, onChange, className, id }: IconSelectorPro
       </div>
       <Popover.Portal>
         <Popover.Content className="z-50 min-w-[220px] rounded-md border bg-white p-2 shadow-md" align="start">
-          <div className="grid grid-cols-6 gap-2">
-            {ICONS.map((icon) => (
-              <button
-                key={icon}
-                className={`flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 ${
-                  value === icon ? 'bg-blue-100' : ''
-                }`}
-                onClick={() => {
-                  onChange(icon);
-                  setOpen(false);
-                }}
-                title={icon}
-              >
-                <Icon name={icon} className="text-lg" />
-                <span className="sr-only">{icon}</span>
-              </button>
-            ))}
+          <div className="max-h-100 overflow-y-auto pr-1 -mr-2">
+            <div className="space-y-6 pr-2">
+              {Object.entries(ICON_GROUPS).map(([groupName, icons]) => (
+                <div key={groupName} className="space-y-2">
+                  <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {groupName.replace(/_/g, ' ')}
+                  </h3>
+                  <div className="grid grid-cols-6 gap-2">
+                    {Object.entries(icons).map(([iconName, iconValue]) => (
+                      <button
+                        key={iconName}
+                        className={`flex h-10 w-10 items-center justify-center rounded-md hover:bg-gray-100 ${
+                          value === iconValue ? 'bg-success-100' : ''
+                        }`}
+                        onClick={() => {
+                          onChange(iconValue);
+                          setOpen(false);
+                        }}
+                        title={iconName.replace(/_/g, ' ').toLowerCase()}
+                      >
+                        <Icon name={iconValue} className="text-lg" />
+                        <span className="sr-only">{iconName.replace(/_/g, ' ').toLowerCase()}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </Popover.Content>
       </Popover.Portal>

@@ -12,12 +12,12 @@ class Category < ApplicationRecord
   default_scope { order(:position) }
 
   def self.seed_category_for_new_user(user)
-    grocery = user.categories.create!(name: "Grocery")
+    grocery = user.categories.create!(icon: "shopping_cart", name: "Grocery")
     user.categories.create!(name: "Walmart", parent: grocery)
     user.categories.create!(name: "Target", parent: grocery)
     user.categories.create!(name: "Aldi", parent: grocery)
 
-    pharmacy = user.categories.create(name: "Pharmacy")
+    pharmacy = user.categories.create(icon: "medication", name: "Pharmacy")
     user.categories.create(name: "CVS", parent: pharmacy)
     user.categories.create(name: "Walgreens", parent: pharmacy)
   end
