@@ -33,7 +33,7 @@ Rails.application.routes.draw do
   root "react#index"
 
   # Handle all other routes to React
-  get "*path", to: "react#index", constraints: ->(req) do
+  get "/react/*path", to: "react#index", constraints: ->(req) do
     !req.xhr? && req.format.html?
   end
 
